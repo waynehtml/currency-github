@@ -68,6 +68,32 @@ include:
 # override these defaults without changing the shared job definition.
 variables:
 
+  # Service principal used to run jobs and SQL alerts.
+  # Resolve by confirmed project.domain, then target; preserve the identifier.
+  # mapping:
+  #   FMD:
+  #     dev: bcb4909e-06b7-411a-97bd-366fe459b759
+  #     stg: 22f42251-7b4a-45a5-b802-32b798af7896
+  #     prd: 2acbbaf6-e1bc-41cf-8d7f-ff2eff302b37
+  #   CUR:
+  #     dev: b1d31712-0160-4825-ac5c-ec70e15ad0fd
+  #     stg: 6f917a13-1483-4b38-91a4-d834e762b194
+  #     prd: 763bd90e-0444-496e-a03b-755f9bce8707
+  #   BAP:
+  #     dev: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #     stg: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #     prd: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #   SUP:
+  #     dev: 07b85d8e-700b-4706-84ea-afa60a3ffedd
+  #     stg: 54ce4715-baab-4988-aaa6-80c973d53d45
+  #     prd: 76696d8d-1a10-44a0-8cd3-08e050e0911d
+  #   OEDS:
+  #     dev: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #     stg: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #     prd: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  runas_service_account:
+    description: Environment-specific service principal used to run jobs and SQL alerts.
+
   #
   # Project Metadata - used for naming and tagging resources.
   # Contact the OEDS team project manager for help with these values if you are unsure what to use.

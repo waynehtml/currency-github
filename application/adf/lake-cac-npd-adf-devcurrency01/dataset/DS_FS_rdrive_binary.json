@@ -1,0 +1,48 @@
+{
+	"name": "DS_FS_rdrive_binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_FS_Rdrive",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"file_path": {
+					"value": "@dataset().file_path",
+					"type": "Expression"
+				},
+				"ad_user_name": {
+					"value": "@dataset().ad_user_name",
+					"type": "Expression"
+				},
+				"kv_pass_key": {
+					"value": "@dataset().kv_pass_key",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"host_name": {
+				"type": "string",
+				"defaultValue": "svm1"
+			},
+			"file_path": {
+				"type": "string",
+				"defaultValue": "home\\asd\\datastg\\isdata\\csep\\ais\\isSource\\CSA\\LANDING"
+			},
+			"ad_user_name": {
+				"type": "string",
+				"defaultValue": "bocad\\crdp_dscurr_oppl_s"
+			},
+			"kv_pass_key": {
+				"type": "string",
+				"defaultValue": "crdp-dscurr-oppl-s-pass"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation"
+			}
+		}
+	}
+}

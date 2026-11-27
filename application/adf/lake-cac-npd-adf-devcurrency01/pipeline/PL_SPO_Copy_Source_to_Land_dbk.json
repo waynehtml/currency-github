@@ -1,0 +1,461 @@
+{
+	"name": "PL_SPO_Copy_Source_to_Land_dbk",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set token",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Execute Pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_token",
+					"value": {
+						"value": "@activity('Execute Pipeline').output.pipelineReturnValue.token\r\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "List All Files",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded",
+						"User-Agent": "MySharePointApp/1.0",
+						"Authorization": {
+							"value": "@concat('Bearer ', variables('var_token'))",
+							"type": "Expression"
+						}
+					},
+					"url": {
+						"value": "@concat('https://graph.microsoft.com/v1.0/drives/', \n        pipeline().parameters.param_spo_drive_id, \n        concat('/root:/',pipeline().parameters.param_spo_path,':/children?'),\n        '$top=999',\n        '&$select=name,id,createdDateTime',\n        '&$orderby=name desc'\n        )",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@replace(replace('grant_type=client_credentials&client_id={sharePoint_client_id}&client_secret={client_secret}&scope=https://graph.microsoft.com/.default', '{sharePoint_client_id}', variables('var_spn_id')), '{client_secret}', variables('var_spn_secret'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('List All Files').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Append filename",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_filenames",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Execute Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_SPO_Get_Bearer_Token",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Filter files",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "List All Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('List All Files').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@if(empty(pipeline().parameters.param_spo_file_pattern), \n        true,\n        contains(item().name, pipeline().parameters.param_spo_file_pattern))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If new file",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.new_1_or_matched_0, 1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "get_new_files",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Call_DBK_Func",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_name": "find_new_files",
+									"param_args": {
+										"value": "@json(\n    concat(\n    '{',\n    '\"files\":\"', join(variables('var_filenames'),'|'), '\",',\n    '\"raw_container\":\"', pipeline().parameters.param_raw_container, '\",',\n    '\"raw_path\":\"',pipeline().parameters.param_raw_path, '\",',\n    '}'\n))",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach - new_filenames",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "If new file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@if(equals(pipeline().parameters.new_1_or_matched_0,1), \n    activity('get_new_files').output.pipelineReturnValue.value,\n    variables('var_filenames') \n)",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set Date",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "extract_date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_date",
+								"value": {
+									"value": "@activity('extract_date').output.pipelineReturnValue.value",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Append dates",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy files From SPO to Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@variables('var_date')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "extract_date",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Call_DBK_Func",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_name": "extract_date",
+									"param_args": {
+										"value": "@json(\n    concat(\n    '{',\n    '\"str\":\"', item(), '\",',\n    '\"regex\":\"', pipeline().parameters.param_date_regex, '\",',\n    '\"iformat\":\"',pipeline().parameters.param_date_iformat, '\",',\n    '\"oformat\":\"', pipeline().parameters.param_date_oformat, '\"',\n    '}'\n))",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy files From SPO to Land",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Set Date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET",
+										"additionalHeaders": {
+											"value": "@{concat('Authorization: Bearer ', variables('var_token'))}",
+											"type": "Expression"
+										},
+										"requestTimeout": ""
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_Binary_SPO",
+									"type": "DatasetReference",
+									"parameters": {
+										"relative_path": {
+											"value": "@concat(pipeline().parameters.param_spo_drive_id,\n    '/root:/', pipeline().parameters.param_spo_path,\n    '/',item(), ':/content')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": "@pipeline().globalParameters.gpm_land_container",
+										"pm_folder": {
+											"value": "@concat(pipeline().parameters.param_land_path,'/',variables('var_date'))",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Set return values",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach - new_filenames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Expression",
+								"content": "@union(variables('var_dates'), json('[]'))"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"new_1_or_matched_0": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"param_spo_drive_id": {
+				"type": "string",
+				"defaultValue": "b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8"
+			},
+			"param_spo_path": {
+				"type": "string",
+				"defaultValue": "Reports-Ottawa/Datalake_Files"
+			},
+			"param_spo_file_pattern": {
+				"type": "string"
+			},
+			"param_raw_container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"param_raw_path": {
+				"type": "string",
+				"defaultValue": "raw/external/cbn/press"
+			},
+			"param_land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"param_land_path": {
+				"type": "string",
+				"defaultValue": "cbn/press"
+			},
+			"param_date_regex": {
+				"type": "string",
+				"defaultValue": "^(.{10})"
+			},
+			"param_date_iformat": {
+				"type": "string",
+				"defaultValue": "%Y-%m-%d"
+			},
+			"param_date_oformat": {
+				"type": "string",
+				"defaultValue": "%Y-%m-%d"
+			}
+		},
+		"variables": {
+			"var_tenant_id": {
+				"type": "String"
+			},
+			"var_spn_id": {
+				"type": "String"
+			},
+			"var_spn_secret": {
+				"type": "String"
+			},
+			"var_token": {
+				"type": "String"
+			},
+			"var_spn_id_name": {
+				"type": "String"
+			},
+			"var_spn_secret_name": {
+				"type": "String"
+			},
+			"var_tenant_id_name": {
+				"type": "String"
+			},
+			"var_filenames": {
+				"type": "Array"
+			},
+			"var_date": {
+				"type": "String"
+			},
+			"var_dates": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/archive"
+		},
+		"annotations": []
+	}
+}

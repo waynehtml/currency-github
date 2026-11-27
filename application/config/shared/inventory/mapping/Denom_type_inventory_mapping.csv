@@ -1,0 +1,64 @@
+﻿inventory_type_code,inventory_type_category,inventory_type_subcategory,inventory_type_name
+NEW/NEUF FRONTIERS,Payable,New,Payable New
+STC Unfit,Backlog,Unfit,Backlog Unfit
+CFT/FB,Other,CFT,Other CFT
+PAPER/PAPIER,Destruction,Paper,Destruction Paper
+UNFIT/IMPROPRE,Destruction,Polymer,Destruction Polymer
+Envelope,Other,Envelope,Other Envelope
+NEW/NEUF VIOLA,Payable,New,Payable New
+Other,Other,Other,Other Other
+SURPLUS,Backlog,Surplus,Backlog Surplus
+REISS/REUT,Payable,Fit,Payable Fit
+Mutilated / Mutilés,Other,Mutilated,Other Mutilated
+PRE 1935,Other,PRE 1935,Other PRE 1935
+Tray Creation/Création de Bac,Other,Tray Creation,Other Tray Creation
+Insufficient note portion,Other,Insufficient note portion,Other Insufficient note portion
+HALF/DEMI POLY,Destruction,Polymer,Destruction Polymer
+POLYMER/POLYMÈRE,Destruction,Polymer,Destruction Polymer
+Foreign Currency / Monnaie étrangére,Other,Foreign Currency,Other Foreign Currency
+HALF/DEMI PAPER,Destruction,Paper,Destruction Paper
+SAM/ECH,Backlog,Samples,Backlog Samples
+SAM/ECH Process,Backlog,Samples,Backlog Samples
+null,null,null,null
+$1 STC UNFIT Process,Backlog,Unfit,Backlog Unfit
+SURPLUS Process,Backlog,Surplus,Backlog Surplus
+KBULK,Destruction,Mix,BULK
+KBULKMIX,Destruction,Mix,BULK MIX
+KBULKPAPER,Destruction,Paper,BULK PAPER
+KBULKPOLY,Destruction,Polymer,BULK POLYMER
+KFIT,Payable,Fit,REISS PYBLE
+KMUT,Other,MUTILATED,MUTILATED
+KNBULK,Destruction,NEW BULK,NEW BULK
+KNEW,Payable,New,NEW PYBLE
+KNEWREG,Payable,New,NEW REG SER PYBLE
+KNEWSERIES,Payable,New Series,NEW SERIES PYBLE
+KNPRO,Pre SNI,NEW PROC,NEW PROC
+KNREPLACE,Pre SNI,NEW REPLACEMENTS,NEW REPLACEMENTS
+KNSPCLRES,Pre SNI,NEW SPCL RSRVD,NEW SPCL RSRVD
+KNSPCLTEST,Pre SNI,NEW SPCL TEST,NEW SPCL TEST
+KNSPOILS,Pre SNI,NEW SPOILS,NEW SPOILS
+KNUNOPEN,Pre SNI,NEW UNOPD NEW,NEW UNOPD NEW
+KPARTPRINT,Pre SNI,PART PRTD,PART PRTD
+KREELS,Destruction,Mix,REELS
+KREJACQNEW,Pre SNI,REJECTED ACQ. NEW SERIES,REJECTED ACQ. NEW SERIES
+KREJACQREG,Pre SNI,REJECTED ACQ. REGULAR,REJECTED ACQ. REGULAR
+KREJECTS,Destruction,Mix,REJECTS
+KREPLACE,Pre SNI,REPLACEMENTS,REPLACEMENTS
+KRPRO,Backlog,Surplus,REISS PROC
+KRUNOPEN,Backlog,Surplus,REISS UNOPD
+KSAMPLE,Backlog,Samples,CIRCULATION SAMPLE NOTES
+KSPCLCMS,Other,SPCL CMS,SPCL CMS
+KSPCLRES,Pre SNI,SPCL RSRVD,SPCL RSRVD
+KSPCLRET,Pre SNI,SPCL RETAIL,SPCL RETAIL
+KSPCLTEST,Pre SNI,SPCL TEST,SPCL TEST
+KSPCRETN,Pre SNI,SPCL RETAIL NEW,SPCL RETAIL NEW
+KSPCRETR,Pre SNI,SPCL RETAIL REG,SPCL RETAIL REG
+KSPOILS,Pre SNI,SPOILS,SPOILS
+KUNOPEN,Pre SNI,NEW UNOPD,NEW UNOPD
+KUPRO,Backlog,Unfit,UNISS PROC
+KUUNOPEN,Backlog,Unfit,UNISS UNOPD
+NONVAL,Other,Non-Value,Non-Value
+STCM,Other,MUT NOTES SAID TO CONTAIN VAL,MUT NOTES SAID TO CONTAIN VAL
+UNFIT,Other,Unfit,Unfit
+Y2K,Other,Y2K,Y2K
+VALUE,SHEET - VALUE,SHEET - VALUE,SHEET - VALUE

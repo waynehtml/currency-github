@@ -1,0 +1,16 @@
+{
+	"name": "LS_HTTP_SPO",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://graph.microsoft.com/v1.0/drives/",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

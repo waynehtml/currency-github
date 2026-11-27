@@ -1,0 +1,370 @@
+{
+	"name": "PL_Binary_Converter",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy to Landing Zone",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_raw_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat('raw/internal/aoc_processing/m7/bn/unconverted/',pipeline().parameters.date,'/',pipeline().parameters.site,'/')",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_land_funcapps_binary",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Binary Converter",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [
+					{
+						"activity": "Copy to Landing Zone",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": "orchestrators/BNListOrchestrator",
+					"method": "POST",
+					"body": {
+						"value": "@concat('{\"storage\":\"',pipeline().globalParameters.gpm_land2_storage,'\"}')",
+						"type": "Expression"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_funcapps",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Until Function Completes",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Binary Converter",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(equals(activity('Get Function Status').output.runtimeStatus,'Completed'), equals(activity('Get Function Status').output.runtimeStatus,'Failed'))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Wait 10 seconds",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 10
+							}
+						},
+						{
+							"name": "Get Function Status",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Wait 10 seconds",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"url": {
+									"value": "@activity('Binary Converter').output.statusQueryGetUri",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "IR-SelfHost01",
+									"type": "IntegrationRuntimeReference"
+								},
+								"method": "GET"
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "If Function Fails",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Until Function Completes",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Get Function Status').output.runtimeStatus,'Failed')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Copy From Landing Zone",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": false,
+										"wildcardFolderPath": "binary_converter",
+										"wildcardFileName": "*.csv",
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_funcapps_binary",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/bn/converted/',pipeline().parameters.date,'/',pipeline().parameters.site,'/')",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Delete Landing Zone",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Copy From Landing Zone - All Sites",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_land_funcapps_binary",
+									"type": "DatasetReference"
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "Copy From Landing Zone - All Sites",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy From Landing Zone",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": false,
+										"wildcardFolderPath": "binary_converter",
+										"wildcardFileName": "*.csv",
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_funcapps_binary",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/bn/converted/',pipeline().parameters.date,'/all_sites')",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Fail Azure Function",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Azure Function Apps Failed",
+								"errorCode": "404"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"date": {
+				"type": "string"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

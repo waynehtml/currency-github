@@ -1,0 +1,70 @@
+{
+  "managedApiConnections": {
+    "azuredatafactory": {
+      "api": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/providers/Microsoft.Web/locations/canadacentral/managedApis/azuredatafactory"
+      },
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      },
+      "connection": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/resourceGroups/lake-cac-npd-rg-devcurrency/providers/Microsoft.Web/connections/azuredatafactory"
+      },
+      "connectionProperties": {
+        "authentication": {
+          "audience": "https://management.core.windows.net/",
+          "type": "ManagedServiceIdentity"
+        }
+      },
+      "connectionRuntimeUrl": "https://fdf81337df7742a9.03.common.logic-canadacentral.azure-apihub.net/apim/azuredatafactory/17c1798ffe564987a2cb5ceb60faad4a"
+    },
+    "azuremonitorlogs": {
+      "api": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/providers/Microsoft.Web/locations/canadacentral/managedApis/azuremonitorlogs"
+      },
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      },
+      "connection": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/resourceGroups/lake-cac-npd-rg-devcurrency/providers/Microsoft.Web/connections/azuremonitorlogs"
+      },
+      "connectionProperties": {
+        "authentication": {
+          "additionalAudiences": [
+            "https://api.loganalytics.io"
+          ],
+          "audience": "https://management.core.windows.net/",
+          "type": "ManagedServiceIdentity"
+        }
+      },
+      "connectionRuntimeUrl": "https://fdf81337df7742a9.03.common.logic-canadacentral.azure-apihub.net/apim/azuremonitorlogs/ea9eeabe41c64944831bb934b807e6ff"
+    },
+    "office365": {
+      "api": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/providers/Microsoft.Web/locations/canadacentral/managedApis/office365"
+      },
+      "connection": {
+        "id": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/resourceGroups/lake-cac-npd-rg-devcurrency/providers/Microsoft.Web/connections/office365"
+      },
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      },
+      "connectionRuntimeUrl": "https://fdf81337df7742a9.03.common.logic-canadacentral.azure-apihub.net/apim/office365/7a0010fb86d44b339f23c5273d07564c"
+    }
+  },
+  "serviceProviderConnections": {
+    "AzureBlob-land01": {
+      "displayName": "sp-land01",
+      "parameterSetName": "ManagedServiceIdentity",
+      "parameterValues": {
+        "authProvider": {
+          "Type": "ManagedServiceIdentity"
+        },
+        "blobStorageEndpoint": "@appsetting('AzureBlob_blobStorageEndpoint')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/AzureBlob"
+      }
+    }
+  }
+}

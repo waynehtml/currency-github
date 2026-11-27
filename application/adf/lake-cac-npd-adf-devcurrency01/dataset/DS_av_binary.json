@@ -1,0 +1,55 @@
+{
+	"name": "DS_av_binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_av",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"av_host": {
+					"value": "@dataset().pm_host",
+					"type": "Expression"
+				},
+				"av_user": {
+					"value": "@dataset().pm_user",
+					"type": "Expression"
+				},
+				"av_pass_secret": {
+					"value": "@dataset().pm_key",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"pm_host": {
+				"type": "string"
+			},
+			"pm_user": {
+				"type": "string"
+			},
+			"pm_key": {
+				"type": "string"
+			},
+			"pm_folder": {
+				"type": "string"
+			},
+			"pm_filename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": {
+					"value": "@dataset().pm_filename",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().pm_folder",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

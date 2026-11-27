@@ -1,0 +1,89 @@
+{
+	"name": "PL_Call_DBK_Func",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute Function",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/common/exec_func",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"name": {
+							"value": "@pipeline().parameters.param_name",
+							"type": "Expression"
+						},
+						"args": {
+							"value": "@string(pipeline().parameters.param_args)",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set return values",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Execute Function",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "value",
+							"value": {
+								"type": "Expression",
+								"content": "@activity('Execute Function').output.runOutput"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"param_name": {
+				"type": "string",
+				"defaultValue": "extract_date"
+			},
+			"param_args": {
+				"type": "object",
+				"defaultValue": {
+					"str": "4700010672-SSN-20250630.1.XML",
+					"regex": "-(\\d{8})",
+					"iformat": "%Y%m%d",
+					"oformat": "%Y-%m-%d"
+				}
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

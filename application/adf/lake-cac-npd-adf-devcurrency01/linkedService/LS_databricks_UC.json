@@ -1,0 +1,17 @@
+{
+	"name": "LS_databricks_UC",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "https://adb-1700301391505163.3.azuredatabricks.net",
+			"authentication": "MSI",
+			"workspaceResourceId": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/resourceGroups/lake-cac-npd-rg-devplatform/providers/Microsoft.Databricks/workspaces/lake-cac-npd-dbw-devuc01",
+			"existingClusterId": "0809-130953-2jfrd9sk"
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

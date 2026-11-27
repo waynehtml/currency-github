@@ -1,0 +1,25 @@
+{
+	"name": "PL_Warning_Email",
+	"properties": {
+		"activities": [
+			{
+				"name": "Wait",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 5
+				}
+			}
+		],
+		"variables": {
+			"v_type": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

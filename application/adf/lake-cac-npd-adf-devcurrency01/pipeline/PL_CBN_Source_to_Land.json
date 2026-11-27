@@ -1,0 +1,283 @@
+{
+	"name": "PL_CBN_Source_to_Land",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get sub folders",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set ds_map",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_FS_rdrive_binary_file",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": "svm1",
+							"file_path": {
+								"value": "@json(variables('var_ds_map'))['drive_root']",
+								"type": "Expression"
+							},
+							"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+							"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+							"filename": {
+								"value": "*",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Sub folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter sub folders').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "PL_FS_Copy_Source_to_Land",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_FS_Copy_Source_to_Land",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"new_1_or_matched_0": {
+										"value": "@if(empty(pipeline().parameters.file_date), 1 , 0 )",
+										"type": "Expression"
+									},
+									"param_file_path": {
+										"value": "@concat(\n    json(variables('var_ds_map'))['drive_root'],'\\',\n    item().name,'\\',\n    json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['src_folder']\n)",
+										"type": "Expression"
+									},
+									"param_file_pattern": {
+										"value": "@if(empty(pipeline().parameters.file_date), \n    json(variables('var_ds_map'))['file_pattern'], \n    replace(pipeline().parameters.file_date,'-','')\n)",
+										"type": "Expression"
+									},
+									"param_raw_container": {
+										"value": "@json(variables('var_ds_map'))['raw_container']",
+										"type": "Expression"
+									},
+									"param_raw_path": {
+										"value": "@concat(\n    json(variables('var_ds_map'))['raw_root'],'/',\n    json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder']\n)",
+										"type": "Expression"
+									},
+									"param_land_container": {
+										"value": "@json(variables('var_ds_map'))['land_container']",
+										"type": "Expression"
+									},
+									"param_land_path": {
+										"value": "@concat(\n    json(variables('var_ds_map'))['land_root'],'/',\n    json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder']\n)",
+										"type": "Expression"
+									},
+									"param_date_regex": {
+										"value": "@json(variables('var_ds_map'))['date_regex']",
+										"type": "Expression"
+									},
+									"param_date_iformat": {
+										"value": "@json(variables('var_ds_map'))['date_iformat']",
+										"type": "Expression"
+									},
+									"param_date_oformat": {
+										"value": "@json(variables('var_ds_map'))['date_oformat']",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Merge return Dates into tmp_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_FS_Copy_Source_to_Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_tmp_dates",
+								"value": {
+									"value": "@union(activity('PL_FS_Copy_Source_to_Land').output.pipelineReturnValue.dates, variables('var_dates'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy tmp to var_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Merge return Dates into tmp_dates",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@variables('var_tmp_dates')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set return values",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Sub folder",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('var_dates')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "Filter sub folders",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get sub folders').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().type, 'Folder')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set ds_map",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_ds_map",
+					"value": {
+						"value": "@pipeline().parameters.ds_map",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"ds_map": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"var_dates": {
+				"type": "Array"
+			},
+			"var_ds_map": {
+				"type": "String"
+			},
+			"var_tmp_dates": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "CBN/archive"
+		},
+		"annotations": []
+	}
+}

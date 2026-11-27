@@ -1,0 +1,27 @@
+[
+    {
+        "machine_serial_number": "1001314",
+        "boc_machine_number": "1",
+        "boc_machine_site": "montreal"
+    },
+    { 
+        "machine_serial_number": "1001315",
+        "boc_machine_number": "2",
+        "boc_machine_site": "montreal"
+    },
+    { 
+        "machine_serial_number": "1001446",
+        "boc_machine_number": "4",
+        "boc_machine_site": "toronto"
+    },
+    { 
+        "machine_serial_number": "1001447",
+        "boc_machine_number": "5",
+        "boc_machine_site": "toronto"
+    },
+    { 
+        "machine_serial_number": "1001185",
+        "boc_machine_number": "6",
+        "boc_machine_site": "toronto"
+    }
+]

@@ -1,0 +1,61 @@
+﻿Unfit Reason,Unfit Grouping
+F_VS_HologramPresent_FIT,Foil
+F_UV_Dull_FIT,F_UV_Dull_FIT
+F_Tear_Score_FIT,Tear
+F_Tear_Depth_FIT,Tear
+F_Tear_Area_FIT,Tear
+F_Tape_Score_FIT,Tape
+F_Stain_WhiteArea_Front_FIT,Stain_unused
+F_Stain_WhiteArea_Back_FIT,Stain_unused
+F_Stain_Motive_Front_FIT,Stain_unused
+F_Stain_Motive_Back_FIT,Stain_unused
+F_Stain_FrontSoilStainArea_FIT,Stain
+F_Stain_FrontInkStainArea_FIT,Stain
+F_Stain_FrontColorStainArea_FIT,Stain
+F_Stain_Border_Front_FIT,Stain_unused
+F_Stain_Border_Back_FIT,Stain_unused
+F_Stain_BackSoilStainArea_FIT,Stain
+F_Stain_BackInkStainArea_FIT,Stain
+F_Stain_Background_Front_FIT,Stain_unused
+F_Stain_Background_Back_FIT,Stain_unused
+F_Stain_BackColorStainArea_FIT,Stain
+F_Special,F_Special
+F_SoilDens_Front_FIT,Soil
+F_SoilDens_Back_FIT,Soil
+F_Soil_Front_FIT,Soil
+F_Soil_Back_FIT,Soil
+F_SNSearchlist,Serial Number
+F_SNR_found,Serial Number
+F_SN_WrongClassifier,Serial Number
+F_NSCUVTape_FIT,Tape
+F_NSCTR_Inkwear_Border_FIT,Ink Wear
+F_NSCTR_Inkwear_BN_FIT,Ink Wear
+F_MissingCorner_FIT,Corner
+F_Hole_Win_Score_FIT,Hole
+F_Hole_Score_FIT,Hole
+F_Hole_Area_FIT,Hole
+F_Graffiti_Front_FIT,Graffiti
+F_Graffiti_Back_FIT,Graffiti
+F_Fusion_HScratchPixSum_FIT,Window
+F_Fusion_HCrumplePixSum_FIT,Crumple
+F_Fusion_FoilWearScore_FIT,Window
+F_Dis_Quality_FIT,F_Dis_Quality_FIT
+F_CrumpleRemSum_FIT,Crumple
+F_CrumpleRemScore_FIT,Crumple
+F_CrumpleRemBorder_FIT,Crumple
+F_Crumple_Score_FIT,Crumple
+F_Corner_Area_FIT,Corner
+F_Composed_UNFIT,Tape
+F_ClearWindow_FIT,Window
+F_BFSLHoloDefectPixelSum_FIT,Foil
+F_BFSLHoloDarkPixelChanging_FIT,Foil
+F_BFS_WearPixSumBorder_FIT,Ink Wear
+F_BFS_WearPixSumBN_FIT,Ink Wear
+F_BFS_TearAreaBorder_FIT,Tear
+F_BFS_HWearPixSumBorder_FIT,Ink Wear
+F_BFS_HologramPresent_FIT,Window
+F_BFS_HolePixSumF_FIT,Hole
+F_BFS_HoleAreaBN_FIT,Hole
+F_BFS_DGraffitiPixSum_FIT,Graffiti
+F_BFS_DefectAreaCorner_FIT,Corner
+F_BFS_CGraffitiPixSumF_FIT,Graffiti

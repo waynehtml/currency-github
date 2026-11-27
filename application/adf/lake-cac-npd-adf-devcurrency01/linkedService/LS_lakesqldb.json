@@ -1,0 +1,14 @@
+{
+	"name": "LS_lakesqldb",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=lake-cac-npd-sql-dev01.database.windows.net;Initial Catalog=lake-cac-npd-sqldb-devcurrency01"
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

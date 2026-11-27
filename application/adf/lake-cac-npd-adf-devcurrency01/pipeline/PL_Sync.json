@@ -1,0 +1,356 @@
+{
+	"name": "PL_Sync",
+	"properties": {
+		"activities": [
+			{
+				"name": "lookup_sync_config",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": {
+								"value": "@substring(pipeline().parameters.param_config_file, 0, lastIndexOf(pipeline().parameters.param_config_file, '/'))",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "@last(split(pipeline().parameters.param_config_file, '/'))",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_config_json",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Loop through each task",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Set pod_location",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set pod_storage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lookup_sync_config').output.firstRow.tasks",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set lake_directory",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_lake_directory",
+								"value": {
+									"value": "@if(\n    endsWith(item().directory, '/'), \n    substring(item().directory, 0, add(length(item().directory), -1)), \n    item().directory\n)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set lake_pattern",
+							"description": "pattern item could be empty or not exist",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_lake_pattern",
+								"value": {
+									"value": "@if(contains(item(), 'pattern'),if(empty(item().pattern), null, item().pattern) , null)\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set pod_box",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set lake_directory",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_pod_box",
+								"value": {
+									"value": "@if(and(contains(item(), 'box'), not(empty(item().box))), item().box, last(split(variables('var_lake_directory'), '/')))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set pod_path",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set pod_box",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_pod_path",
+								"value": {
+									"value": "@concat(variables('var_pod_location'),'/',variables('var_pod_box'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "if back or restore",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set pod_path",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set lake_pattern",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(pipeline().parameters.param_backup_or_restore,1)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Execute restore",
+										"type": "ExecutePipeline",
+										"dependsOn": [],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "PL_Sync_Restore",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"param_lake_directory": {
+													"value": "@variables('var_lake_directory')",
+													"type": "Expression"
+												},
+												"param_lake_pattern": {
+													"value": "@variables('var_lake_pattern')",
+													"type": "Expression"
+												},
+												"param_pod_path": {
+													"value": "@variables('var_pod_path')",
+													"type": "Expression"
+												},
+												"param_pod_storage": {
+													"value": "@variables('var_pod_storage')",
+													"type": "Expression"
+												},
+												"param_delete_or_overwrite": {
+													"value": "@pipeline().parameters.param_delete_or_overwrite",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Execute backup",
+										"type": "ExecutePipeline",
+										"dependsOn": [],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "PL_Sync_Backup",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"param_lake_directory": {
+													"value": "@variables('var_lake_directory')",
+													"type": "Expression"
+												},
+												"param_lake_pattern": {
+													"value": "@variables('var_lake_pattern')",
+													"type": "Expression"
+												},
+												"param_pod_path": {
+													"value": "@variables('var_pod_path')",
+													"type": "Expression"
+												},
+												"param_pod_storage": {
+													"value": "@variables('var_pod_storage')",
+													"type": "Expression"
+												},
+												"param_delete_or_overwrite": {
+													"value": "@pipeline().parameters.param_delete_or_overwrite",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set pod_location",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "lookup_sync_config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_pod_location",
+					"value": {
+						"value": "@if(equals(pipeline().parameters.param_sync_or_land, 1), activity('lookup_sync_config').output.firstRow.config.pod.sync, activity('lookup_sync_config').output.firstRow.config.pod.land)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set pod_storage",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "lookup_sync_config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_pod_storage",
+					"value": {
+						"value": "@if(equals(pipeline().parameters.param_sync_or_land, 1), pipeline().globalParameters.gpm_sync_storage, pipeline().globalParameters.gpm_land_storage)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"param_config_file": {
+				"type": "string",
+				"defaultValue": "config-currency/sync/sync.json"
+			},
+			"param_backup_or_restore": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"param_sync_or_land": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"param_delete_or_overwrite": {
+				"type": "int",
+				"defaultValue": 1
+			}
+		},
+		"variables": {
+			"var_lake_directory": {
+				"type": "String"
+			},
+			"var_lake_pattern": {
+				"type": "String"
+			},
+			"var_pod_location": {
+				"type": "String",
+				"defaultValue": "sync-currency/sync/"
+			},
+			"var_pod_box": {
+				"type": "String"
+			},
+			"var_pod_path": {
+				"type": "String"
+			},
+			"var_lake_path": {
+				"type": "String"
+			},
+			"var_pod_storage": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/sync"
+		},
+		"annotations": []
+	}
+}

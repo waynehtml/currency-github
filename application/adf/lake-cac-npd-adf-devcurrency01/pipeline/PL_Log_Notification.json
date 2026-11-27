@@ -1,0 +1,42 @@
+{
+	"name": "PL_Log_Notification",
+	"properties": {
+		"activities": [
+			{
+				"name": "Wait",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 5
+				}
+			}
+		],
+		"parameters": {
+			"pipeline": {
+				"type": "string"
+			},
+			"key1": {
+				"type": "string"
+			},
+			"key2": {
+				"type": "string"
+			},
+			"key3": {
+				"type": "string"
+			},
+			"runid": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_type": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common"
+		},
+		"annotations": []
+	}
+}

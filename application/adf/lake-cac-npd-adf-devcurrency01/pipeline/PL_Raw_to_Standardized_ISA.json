@@ -1,0 +1,243 @@
+{
+	"name": "PL_Raw_to_Standardized_ISA",
+	"properties": {
+		"activities": [
+			{
+				"name": "File Validation",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/ISA/common/file_validation",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"date": {
+							"value": "@pipeline().parameters.date",
+							"type": "Expression"
+						},
+						"file": {
+							"value": "@pipeline().parameters.file",
+							"type": "Expression"
+						},
+						"env": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set return_value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "File Validation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "notebook_return",
+					"value": {
+						"value": "@activity('File Validation').output.runOutput",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "check_file_size",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set return_value",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('notebook_return'),'nonzero')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Raw to Standardized",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Data Validation",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@concat('/currency/ISA/',toLower(pipeline().parameters.file),'/20_standardized/raw_to_standardized')",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"storage": {
+										"value": "@pipeline().globalParameters.gpm_storage",
+										"type": "Expression"
+									},
+									"land_storage": {
+										"value": "@pipeline().globalParameters.gpm_land_storage",
+										"type": "Expression"
+									},
+									"land_container": {
+										"value": "@pipeline().parameters.land_container",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@pipeline().parameters.date",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().globalParameters.gpm_env",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Data Validation",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "/currency/ISA/common/data_validation",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"storage": {
+										"value": "@pipeline().globalParameters.gpm_storage",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@pipeline().parameters.date",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().globalParameters.gpm_env",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			},
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"tenant_id_secret": {
+				"type": "string",
+				"defaultValue": "lake-tenant-id"
+			},
+			"spn_key_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-key"
+			},
+			"spn_id_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-id"
+			},
+			"kv_scope": {
+				"type": "string",
+				"defaultValue": "lake-kv-currency-scope"
+			}
+		},
+		"variables": {
+			"notebook_return": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "ISA/Dynamic"
+		},
+		"annotations": []
+	}
+}

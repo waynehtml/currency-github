@@ -1,0 +1,903 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope_-_try_read_config": {
+        "type": "Scope",
+        "actions": {
+          "Read_blob_content_based_on_URI_-_project_config": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "blobUri": "@variables('var_project_config_file')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "AzureBlob-land01",
+                "operationId": "readBlobFromUri",
+                "serviceProviderId": "/serviceProviders/AzureBlob"
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Set_variable_-_Run_IDs": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Compose_-_project_config": {
+        "type": "Compose",
+        "inputs": "@body('Read_blob_content_based_on_URI_-_project_config')?['content']",
+        "runAfter": {
+          "Scope_-_try_read_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Parse_config_file_-_project_config": {
+        "type": "ParseJson",
+        "inputs": {
+          "content": "@outputs('Compose_-_project_config')",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "object",
+                "properties": {
+                  "dev": {
+                    "type": "object",
+                    "properties": {
+                      "recipients": {
+                        "type": "object",
+                        "properties": {
+                          "default": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "stg": {
+                    "type": "object",
+                    "properties": {
+                      "recipients": {
+                        "type": "object",
+                        "properties": {
+                          "default": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "prd": {
+                    "type": "object",
+                    "properties": {
+                      "recipients": {
+                        "type": "object",
+                        "properties": {
+                          "default": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "predefinedBindings": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "object",
+                        "properties": {
+                          "kql": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "email": {
+                        "type": "object",
+                        "properties": {
+                          "recipient": {
+                            "type": "string"
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "failure": {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "object",
+                        "properties": {
+                          "kql": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "email": {
+                        "type": "object",
+                        "properties": {
+                          "recipient": {
+                            "type": "string"
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "cancel": {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "object",
+                        "properties": {
+                          "kql": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "email": {
+                        "type": "object",
+                        "properties": {
+                          "recipient": {
+                            "type": "string"
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "alerts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "recipient": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "ref": {
+                      "type": "object",
+                      "properties": {
+                        "binding": {
+                          "type": "string"
+                        },
+                        "parameter": {
+                          "type": "object",
+                          "properties": {
+                            "PipelineName": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "binding": {
+                      "type": "object",
+                      "properties": {
+                        "rule": {
+                          "type": "object",
+                          "properties": {
+                            "kql": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "email": {
+                          "type": "object",
+                          "properties": {
+                            "recipient": {
+                              "type": "string"
+                            },
+                            "subject": {
+                              "type": "string"
+                            },
+                            "body": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Compose_-_project_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_project_root": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_project_root",
+              "type": "string",
+              "value": "@{if(empty(triggerBody()?['project']),'/config-currency/alert_service/currency/',triggerBody()?['project'])}"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "For_each_-_config_alert": {
+        "type": "Foreach",
+        "foreach": "@variables('var_config_alerts')",
+        "actions": {
+          "Compose_-_alert": {
+            "type": "Compose",
+            "inputs": "@items('For_each_-_config_alert')"
+          },
+          "Compose_-_merge_predefined_binding": {
+            "type": "Compose",
+            "inputs": "@addProperty(items('For_each_-_config_alert'),'binding',variables('var_predefined_bindings')[items('For_each_-_config_alert')['ref']['binding']])",
+            "runAfter": {
+              "Compose_-_alert": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "kql": {
+            "type": "Compose",
+            "inputs": "@outputs('Compose_-_merge_predefined_binding')['binding']['rule']['kql']",
+            "runAfter": {
+              "Compose_-_merge_predefined_binding": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "kql_param": {
+            "type": "Compose",
+            "inputs": "@outputs('Compose_-_merge_predefined_binding')['ref']['parameter']",
+            "runAfter": {
+              "kql": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Execute_JavaScript_code_-_parameterized_kql": {
+            "type": "JavaScriptCode",
+            "inputs": {
+              "code": "// Get the current object from the loop and your template string\r\n// Adjust these parameters based on how you're passing in the data\r\nconst logResultObject = workflowContext.actions.kql_param.outputs\r\nconst emailTemplateString = workflowContext.actions.kql.outputs // Replace with your actual template\r\n\r\n\r\nlet emailContentString = String(emailTemplateString || \"\");\r\n\r\ntry {\r\n    // Get all keys from the object\r\n    const keys = Object.keys(logResultObject);\r\n    \r\n    // Replace each {key} with its corresponding value\r\n    keys.forEach(key => {\r\n        const placeholder = `{${key}}`;\r\n        // Use a safer approach to replace all occurrences\r\n        while (emailContentString.includes(placeholder)) {\r\n            emailContentString = emailContentString.replace(placeholder, logResultObject[key] || \"\");\r\n        }\r\n    });\r\n} catch (error) {\r\n    // Handle any errors\r\n    return JSON.stringify({\r\n        errorMessage: error.message,\r\n        templateType: typeof emailTemplateString,\r\n        objectType: typeof logResultObject,\r\n        objectSample: JSON.stringify(logResultObject)\r\n    }, null, 2);\r\n}\r\n\r\n// Return the processed string\r\nreturn emailContentString;"
+            },
+            "runAfter": {
+              "kql_param": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Compose_-_show_parameterized_sql": {
+            "type": "Compose",
+            "inputs": "@outputs('Execute_JavaScript_code_-_parameterized_kql')",
+            "runAfter": {
+              "Execute_JavaScript_code_-_parameterized_kql": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "alert": {
+            "type": "Compose",
+            "inputs": "@addProperty(outputs('Compose_-_merge_predefined_binding'),'kql',outputs('Execute_JavaScript_code_-_parameterized_kql'))",
+            "runAfter": {
+              "Compose_-_show_parameterized_sql": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Run_query_and_list_results": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "referenceName": "azuremonitorlogs"
+                }
+              },
+              "method": "post",
+              "body": "@outputs('alert')['kql']",
+              "path": "/queryData",
+              "queries": {
+                "subscriptions": "@parameters('PARAM_ENV_SUB_ID')",
+                "resourcegroups": "@parameters('PARAM_ENV_PLATFORM_RG')",
+                "resourcetype": "Log Analytics Workspace",
+                "resourcename": "@parameters('PARAM_ENV_LOG_NAME')",
+                "timerange": "PT10M"
+              },
+              "retryPolicy": {
+                "type": "fixed",
+                "count": 2,
+                "interval": "PT10S"
+              }
+            },
+            "runAfter": {
+              "alert": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Condition_-_log_exists": {
+            "type": "If",
+            "expression": {
+              "and": [
+                {
+                  "greater": [
+                    "@length(body('Run_query_and_list_results')?['value'])",
+                    0
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "Read_blob_content_based_on_URI_-_email_template": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "blobUri": "@concat(variables('var_project_root'),outputs('alert')['binding']['email']['body'])"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "AzureBlob-land01",
+                    "operationId": "readBlobFromUri",
+                    "serviceProviderId": "/serviceProviders/AzureBlob"
+                  }
+                },
+                "runAfter": {
+                  "email_subject": [
+                    "SUCCEEDED"
+                  ]
+                }
+              },
+              "email_template": {
+                "type": "Compose",
+                "inputs": "@base64ToString(body('Read_blob_content_based_on_URI_-_email_template')?['content']?['$content'])",
+                "runAfter": {
+                  "Read_blob_content_based_on_URI_-_email_template": [
+                    "SUCCEEDED"
+                  ]
+                }
+              },
+              "for_each_-_log_result": {
+                "type": "foreach",
+                "foreach": "@body('Run_query_and_list_results')?['value']",
+                "actions": {
+                  "Condition_-_runid_was_processed": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "contains": [
+                            "@variables('var_old_runids')",
+                            "@items('for_each_-_log_result')['RunId']"
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {},
+                    "else": {
+                      "actions": {
+                        "original_log_result": {
+                          "type": "Compose",
+                          "inputs": "@items('for_each_-_log_result')"
+                        },
+                        "Execute_JavaScript_code_-_flatten_log_JSON": {
+                          "type": "JavaScriptCode",
+                          "inputs": {
+                            "code": "// Simple direct flattening for Execute JavaScript Code action\r\n// Input parameter: inputJson\r\n\r\n// Initialize empty result\r\nlet result = {};\r\nconst inputJsonObject = workflowContext.actions.original_log_result.outputs;\r\n\r\n// Function to safely parse JSON strings\r\nfunction parseJsonProperty(value) {\r\n  //console.log(\"parsing ....\")\r\n  //console.log(typeof value)\r\n  //console.log(value);\r\n  if (typeof value !== 'string') {\r\n    return value; // Return as-is if not a string\r\n  }\r\n  \r\n  try {\r\n    return JSON.parse(value);\r\n  } catch (error) {\r\n    //console.warn(`Failed to parse property: ${value}`, error);\r\n    return value; // Return original string if parsing fails\r\n  }\r\n}\r\n\r\n// Parse all first-level properties\r\nconst inputJson = {};\r\n\r\nfor (const [key, value] of Object.entries(inputJsonObject)) {\r\n  inputJson[key] = parseJsonProperty(value);\r\n}\r\n\r\n// Process each top-level property\r\nfor (let prop in inputJson) {\r\n    let value = inputJson[prop];\r\n\r\n    // always keep the original value\r\n    result[prop] = value;\r\n    \r\n    // Check if it's a nested object\r\n    if (value && typeof value === 'object' && !Array.isArray(value)) {\r\n        // It's an object, flatten its properties\r\n        for (let subProp in value) {\r\n            let subValue = value[subProp];\r\n            \r\n            // Check if the sub-property is also an object\r\n            if (subValue && typeof subValue === 'object' && !Array.isArray(subValue)) {\r\n                // Another level deep\r\n                for (let deepProp in subValue) {\r\n                    result[`${prop}_${subProp}_${deepProp}`] = subValue[deepProp];\r\n                }\r\n            } else {\r\n                // Simple value or array\r\n                result[`${prop}_${subProp}`] = Array.isArray(subValue) ? JSON.stringify(subValue) : subValue;\r\n            }\r\n        }\r\n        result[prop + \"__str\"] =  JSON.stringify(value);\r\n    } else if (Array.isArray(value)) {\r\n        // Top-level simple value or array\r\n        result[prop + \"__str\"] =  JSON.stringify(value);\r\n    } else {\r\n        \r\n    }\r\n}\r\n\r\n\r\n// Return flattened object\r\nreturn result;"
+                          },
+                          "runAfter": {
+                            "original_log_result": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Convert_time_zone_-_start_time": {
+                          "type": "Expression",
+                          "kind": "ConvertTimezone",
+                          "inputs": {
+                            "baseTime": "@outputs('Execute_JavaScript_code_-_flatten_log_JSON')?['Start']",
+                            "sourceTimeZone": "UTC",
+                            "destinationTimeZone": "Eastern Standard Time",
+                            "formatString": "G"
+                          },
+                          "runAfter": {
+                            "Execute_JavaScript_code_-_flatten_log_JSON": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_start_time_local_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(\r\n    outputs('Execute_JavaScript_code_-_flatten_log_JSON'),\r\n    'start_local',\r\n    outputs('Convert_time_zone_-_start_time')?['body']\r\n)",
+                          "runAfter": {
+                            "Convert_time_zone_-_start_time": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Convert_time_zone_-_end_time": {
+                          "type": "Expression",
+                          "kind": "ConvertTimezone",
+                          "inputs": {
+                            "baseTime": "@outputs('Execute_JavaScript_code_-_flatten_log_JSON')?['End']",
+                            "sourceTimeZone": "UTC",
+                            "destinationTimeZone": "Eastern Standard Time",
+                            "formatString": "G"
+                          },
+                          "runAfter": {
+                            "Compose_-_add_start_time_local_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_end_time_local_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(\r\n    outputs('Compose_-_add_start_time_local_in_log'),\r\n    'end_local',\r\n    outputs('Convert_time_zone_-_end_time')?['body']\r\n)",
+                          "runAfter": {
+                            "Convert_time_zone_-_end_time": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_env_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(outputs('Compose_-_add_end_time_local_in_log'),'env',parameters('PARAM_ENV'))",
+                          "runAfter": {
+                            "Compose_-_add_end_time_local_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_name_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(outputs('Compose_-_add_env_in_log'),'alert_name',outputs('alert')['name'])",
+                          "runAfter": {
+                            "Compose_-_add_env_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_SubId_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(outputs('Compose_-_add_name_in_log'),'SubId',variables('var_project_config')['env'][parameters('PARAM_ENV')]['SubID'])",
+                          "runAfter": {
+                            "Compose_-_add_name_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_ResGroup_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(outputs('Compose_-_add_SubId_in_log'),'ResGroup',variables('var_project_config')['env'][parameters('PARAM_ENV')]['ResGroup'])",
+                          "runAfter": {
+                            "Compose_-_add_SubId_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Compose_-_add_AdfName_in_log": {
+                          "type": "Compose",
+                          "inputs": "@addProperty(outputs('Compose_-_add_ResGroup_in_log'),'AdfName',variables('var_project_config')['env'][parameters('PARAM_ENV')]['ADFName'])",
+                          "runAfter": {
+                            "Compose_-_add_ResGroup_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "log_result": {
+                          "type": "Compose",
+                          "inputs": "@outputs('Compose_-_add_AdfName_in_log')",
+                          "runAfter": {
+                            "Compose_-_add_AdfName_in_log": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Execute_JavaScript_code_-_email_subject": {
+                          "type": "JavaScriptCode",
+                          "inputs": {
+                            "code": "// Get the current object from the loop and your template string\r\n// Adjust these parameters based on how you're passing in the data\r\nconst logResultObject = workflowContext.actions.log_result.outputs\r\nconst emailTemplateString = workflowContext.actions.email_subject.outputs // Replace with your actual template\r\n\r\n\r\nlet emailContentString = String(emailTemplateString || \"\");\r\n\r\ntry {\r\n    // Get all keys from the object\r\n    const keys = Object.keys(logResultObject);\r\n    \r\n    // Replace each {key} with its corresponding value\r\n    keys.forEach(key => {\r\n        const placeholder = `{${key}}`;\r\n        // Use a safer approach to replace all occurrences\r\n        while (emailContentString.includes(placeholder)) {\r\n            emailContentString = emailContentString.replace(placeholder, logResultObject[key] || \"\");\r\n        }\r\n    });\r\n} catch (error) {\r\n    // Handle any errors\r\n    return JSON.stringify({\r\n        errorMessage: error.message,\r\n        templateType: typeof emailTemplateString,\r\n        objectType: typeof logResultObject,\r\n        objectSample: JSON.stringify(logResultObject)\r\n    }, null, 2);\r\n}\r\n\r\n// Return the processed string\r\nreturn emailContentString;"
+                          },
+                          "runAfter": {
+                            "log_result": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Execute_JavaScript_code_-_email_content": {
+                          "type": "JavaScriptCode",
+                          "inputs": {
+                            "code": "// Get the current object from the loop and your template string\r\n// Adjust these parameters based on how you're passing in the data\r\nconst logResultObject = workflowContext.actions.log_result.outputs\r\nconst emailTemplateString = workflowContext.actions.email_template.outputs // Replace with your actual template\r\n\r\n\r\nlet emailContentString = String(emailTemplateString || \"\");\r\n\r\ntry {\r\n    // Get all keys from the object\r\n    const keys = Object.keys(logResultObject);\r\n    \r\n    // Replace each {key} with its corresponding value\r\n    keys.forEach(key => {\r\n        const placeholder = `{${key}}`;\r\n        // Use a safer approach to replace all occurrences\r\n        while (emailContentString.includes(placeholder)) {\r\n            emailContentString = emailContentString.replace(placeholder, logResultObject[key] || \"\");\r\n        }\r\n    });\r\n} catch (error) {\r\n    // Handle any errors\r\n    return JSON.stringify({\r\n        errorMessage: error.message,\r\n        templateType: typeof emailTemplateString,\r\n        objectType: typeof logResultObject,\r\n        objectSample: JSON.stringify(logResultObject)\r\n    }, null, 2);\r\n}\r\n\r\n// Return the processed string\r\nreturn emailContentString;"
+                          },
+                          "runAfter": {
+                            "Execute_JavaScript_code_-_email_subject": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "email_recipient": {
+                          "type": "Compose",
+                          "inputs": "@if(contains(outputs('alert'),'recipient'), \r\nvariables('var_config_recipients')[outputs('alert')['recipient']], \r\nvariables('var_config_recipients')[outputs('alert')['binding']['email']['recipient']])\r\n",
+                          "runAfter": {
+                            "Execute_JavaScript_code_-_email_content": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Send_an_email_(V2)_-_Send_alert": {
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "referenceName": "office365"
+                              }
+                            },
+                            "method": "post",
+                            "body": {
+                              "To": "@{outputs('email_recipient')}",
+                              "Subject": "@{outputs('Execute_JavaScript_code_-_email_subject')}",
+                              "Body": "<p class=\"editor-paragraph\">@{outputs('Execute_JavaScript_code_-_email_content')}</p>",
+                              "Importance": "Normal"
+                            },
+                            "path": "/v2/Mail"
+                          },
+                          "runAfter": {
+                            "email_recipient": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Upload_blob_to_storage_container_based_on_a_URI_-_Write_runid.txt": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "blobUri": "@concat(variables('var_project_root'),'/run/',items('for_each_-_log_result')['RunId'])",
+                              "content": "items('for_each_-_log_result')['RunId']",
+                              "overrideIfExists": "true"
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "AzureBlob-land01",
+                              "operationId": "uploadBlobFromUri",
+                              "serviceProviderId": "/serviceProviders/AzureBlob"
+                            }
+                          },
+                          "runAfter": {
+                            "Send_an_email_(V2)_-_Send_alert": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "runAfter": {
+                  "email_template": [
+                    "SUCCEEDED"
+                  ]
+                }
+              },
+              "email_subject": {
+                "type": "Compose",
+                "inputs": "@outputs('alert')['binding']['email']['subject']"
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Run_query_and_list_results": [
+                "SUCCEEDED"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_predefinedBindings": [
+            "SUCCEEDED"
+          ],
+          "Set_variable_-_config_alerts": [
+            "SUCCEEDED"
+          ],
+          "Initialize_variables_-_recipients": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_project_config": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_project_config",
+              "type": "object",
+              "value": "@body('Parse_config_file_-_project_config')"
+            }
+          ]
+        },
+        "runAfter": {
+          "Parse_config_file_-_project_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Response": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200
+        },
+        "runAfter": {
+          "For_each_-_config_alert": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_config_alerts": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_config_alerts",
+              "type": "array",
+              "value": "@variables('var_project_config')['alerts']"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_project_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_project_config_file": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_project_config_file",
+              "type": "string",
+              "value": "@{concat(variables('var_project_root'),parameters('PARM_ALERT_PROJECT_CONFIG_FILE'))}"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_project_root": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_predefinedBindings": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_predefined_bindings",
+              "type": "object",
+              "value": "@variables('var_project_config')['predefinedBindings']"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_project_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Filter_array_-_active_alerts": {
+        "type": "Query",
+        "inputs": {
+          "from": "@variables('var_config_alerts')",
+          "where": "@or(not(contains(item(),'status')), equals(item()['status'],'enabled'))"
+        },
+        "runAfter": {
+          "Initialize_variables_-_config_alerts": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Set_variable_-_config_alerts": {
+        "type": "SetVariable",
+        "inputs": {
+          "name": "var_config_alerts",
+          "value": "@body('Filter_array_-_active_alerts')"
+        },
+        "runAfter": {
+          "Filter_array_-_active_alerts": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_recipients": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_config_recipients",
+              "type": "object",
+              "value": "@variables('var_project_config')['env'][parameters('PARAM_ENV')]['recipients']"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_project_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "ReadRunIdScope": {
+        "type": "Scope",
+        "actions": {
+          "List_all_the_blobs_based_on_a_URI_-_Run_files": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "blobUri": "@concat(variables('var_project_root'),'/run/')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "AzureBlob-land01",
+                "operationId": "listBlobsFromUri",
+                "serviceProviderId": "/serviceProviders/AzureBlob"
+              }
+            }
+          },
+          "Filter_array_-_file_only": {
+            "type": "Query",
+            "inputs": {
+              "from": "@body('List_all_the_blobs_based_on_a_URI_-_Run_files')?['blobs']",
+              "where": "@not(endsWith(item()['name'], 'run'))"
+            },
+            "runAfter": {
+              "List_all_the_blobs_based_on_a_URI_-_Run_files": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "For_each_-_file": {
+            "type": "Foreach",
+            "foreach": "@body('Filter_array_-_file_only')",
+            "actions": {
+              "Append_to_array_variable_-_runid": {
+                "type": "AppendToArrayVariable",
+                "inputs": {
+                  "name": "var_old_runid_list",
+                  "value": "@last(split(item()['name'],'/'))"
+                }
+              },
+              "Delete_a_blob_based_on_a_URI_-_run_folder": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "blobUri": "@items('For_each_-_file')['blobFullPathWithContainer']"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "AzureBlob-land01",
+                    "operationId": "deleteBlobFromUri",
+                    "serviceProviderId": "/serviceProviders/AzureBlob"
+                  }
+                },
+                "runAfter": {
+                  "Append_to_array_variable_-_runid": [
+                    "SUCCEEDED"
+                  ]
+                }
+              }
+            },
+            "runAfter": {
+              "Filter_array_-_file_only": [
+                "SUCCEEDED"
+              ]
+            },
+            "runtimeConfiguration": {
+              "concurrency": {
+                "repetitions": 1
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_old_RunIds": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Set_variable_-_Run_IDs": {
+        "type": "SetVariable",
+        "inputs": {
+          "name": "var_old_runids",
+          "value": "@if(\r\n  equals(result('ReadRunIdScope')[0]['status'], 'Succeeded'),\r\n  join(variables('var_old_runid_list'),','),\r\n  ''\r\n)"
+        },
+        "runAfter": {
+          "ReadRunIdScope": [
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        }
+      },
+      "Initialize_variables_-_old_RunIds": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_old_runids",
+              "type": "string"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_Run_IDs_List": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_Run_IDs_List": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_old_runid_list",
+              "type": "array"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_project_config_file": [
+            "SUCCEEDED"
+          ]
+        }
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "httpreq": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "project": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "kind": "Stateful"
+}

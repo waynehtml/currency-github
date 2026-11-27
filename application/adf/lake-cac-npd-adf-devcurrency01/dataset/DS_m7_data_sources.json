@@ -1,0 +1,58 @@
+{
+	"name": "DS_m7_data_sources",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_landingzone",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"pm_container": {
+				"type": "string",
+				"defaultValue": "config-currency"
+			},
+			"pm_folder": {
+				"type": "string",
+				"defaultValue": "common"
+			},
+			"pm_filename": {
+				"type": "string",
+				"defaultValue": "curr_file_type_load_dates.json"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().pm_filename",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().pm_folder",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().pm_container",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"MAOCReissNotes": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"date": {
+								"type": "string"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

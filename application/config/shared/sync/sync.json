@@ -1,0 +1,42 @@
+{
+  "config": {
+	  "pod": {"land": "land-currency/sync", "sync": "sync-currency/sync"}
+  },
+  "tasks": [
+    {
+      "directory": "restricted/raw/internal/aoc_processing/m7/",
+      "pattern": "",
+      "box": "m7_raw"
+    },
+    {
+      "directory": "restricted/standardized/internal/aoc_processing/m7/",
+      "pattern": "",
+      "box": "m7_std"
+    },
+	{
+      "directory": "restricted/raw/internal/inventory_supply_accounting/",
+      "pattern": "",
+      "box": "isa_raw"
+    },
+	{
+      "directory": "restricted/standardized/internal/inventory_supply_accounting/",
+      "pattern": "",
+      "box": "isa_std"
+    },
+    {
+      "directory": "restricted/raw/external/rcmp/",
+      "pattern": "",
+      "box": "rcmp_raw"
+    },
+	{
+      "directory": "restricted/raw/external/cision/",
+      "pattern": "",
+      "box": "cision_raw"
+    },
+	{
+      "directory": "restricted/raw/internal/sap/brs/",
+      "pattern": "",
+      "box": "brs_raw"
+    }
+  ]
+}

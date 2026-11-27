@@ -1,0 +1,186 @@
+{
+	"name": "PL_Archive_Files",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy Files To Archive",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "SftpReadSettings",
+							"recursive": false,
+							"wildcardFileName": {
+								"value": "@if( equals(pipeline().parameters.file,'bn'),concat('BNList2_???????_', replace(pipeline().parameters.date, '-', ''),'*'),\nif(equals(pipeline().parameters.file,'shift'),concat('???????_', replace(pipeline().parameters.date, '-', ''),'_??????_*.xml'),concat( pipeline().parameters.file,'_',replace(pipeline().parameters.date, '-', '_'),'*.csv')))",
+								"type": "Expression"
+							},
+							"deleteFilesAfterCompletion": false,
+							"disableChunking": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "SftpWriteSettings",
+							"operationTimeout": "01:00:00",
+							"useTempFileRename": true
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@pipeline().parameters.hostname",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@pipeline().parameters.username",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@pipeline().parameters.key",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@pipeline().parameters.folder",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@if( or(equals(pipeline().parameters.file,'bn'),equals(pipeline().parameters.file,'shift')),pipeline().globalParameters.gpm_sftp_host,pipeline().globalParameters.gpm_sftp_host_isa)\n",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@if( or(equals(pipeline().parameters.file,'bn'),equals(pipeline().parameters.file,'shift')),pipeline().globalParameters.gpm_sftp_user,pipeline().globalParameters.gpm_sftp_user_isa)\n",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@if( or(equals(pipeline().parameters.file,'bn'),equals(pipeline().parameters.file,'shift')),'M7-pass','ISA-pass')\n",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@if( or(equals(pipeline().parameters.file,'bn'),equals(pipeline().parameters.file,'shift')),concat('/BOC/Archive/',pipeline().parameters.file,'/'),concat('/ISA/Archive/',pipeline().parameters.file,'/'))",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Delete Copied Files",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Copy Files To Archive",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@pipeline().parameters.hostname",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@pipeline().parameters.username",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@pipeline().parameters.key",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@pipeline().parameters.folder",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "SftpReadSettings",
+						"recursive": false,
+						"wildcardFileName": {
+							"value": "@{if( equals(pipeline().parameters.file,'bn'),concat('BNList2_???????_', replace(pipeline().parameters.date, '-', ''),'*'),\nif(equals(pipeline().parameters.file,'shift'),concat('???????_', replace(pipeline().parameters.date, '-', ''),'_??????_*.xml'),concat( pipeline().parameters.file,'_',replace(pipeline().parameters.date, '-', '_'),'*.csv')))}",
+							"type": "Expression"
+						},
+						"enablePartitionDiscovery": false,
+						"disableChunking": false
+					}
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			},
+			"hostname": {
+				"type": "string"
+			},
+			"username": {
+				"type": "string"
+			},
+			"key": {
+				"type": "string"
+			},
+			"folder": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Common"
+		},
+		"annotations": []
+	}
+}

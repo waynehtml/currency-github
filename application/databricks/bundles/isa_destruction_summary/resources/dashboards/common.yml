@@ -1,0 +1,152 @@
+variables:
+  # Independent dashboard access mapping; initially based on alert audiences.
+  # All service principals and manager groups use CAN_MANAGE.
+  # Other groups use CAN_READ (view access).
+  # Domain app SPNs are excluded. Viewer credentials determine data access.
+  # Resolve by confirmed project.domain, then target; preserve explicit overrides.
+  # mapping:
+  #   FMD:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     - group_name: lake_tritonsupport_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     - group_name: lake_tritonsupport_rusr_inpa
+  #       level: CAN_READ
+  #   CUR:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #   BAP:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #   SUP:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #   OEDS:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_READ
+  dashboard_permissions:
+    description: Environment-specific permissions shared by all AI/BI dashboards.
+    type: complex
+  dashboard_warehouse_id:
+    description: SQL warehouse used unless overridden on a dashboard resource.
+    default: ${var.sql_warehouse_serverless_small_id}
+
+targets:
+  dev:
+    variables:
+      # name: dev_dashboard_permissions
+      # description: Mapped dev permissions for AI/BI dashboards.
+      # required: true
+      # value:
+      #   modes: ["infer", "input"]
+      #   infer: From the mapping beside variables.dashboard_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then dev.
+      #     Preserve the native permission list unless explicitly overridden.
+      dashboard_permissions: "{{dev_dashboard_permissions}}"
+  stg:
+    variables:
+      # name: stg_dashboard_permissions
+      # description: Mapped stg permissions for AI/BI dashboards.
+      # required: true
+      # value:
+      #   modes: ["infer", "input"]
+      #   infer: From the mapping beside variables.dashboard_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then stg.
+      #     Preserve the native permission list unless explicitly overridden.
+      dashboard_permissions: "{{stg_dashboard_permissions}}"
+  prd:
+    variables:
+      # name: prd_dashboard_permissions
+      # description: Mapped prd permissions for AI/BI dashboards.
+      # required: true
+      # value:
+      #   modes: ["infer", "input"]
+      #   infer: From the mapping beside variables.dashboard_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then prd.
+      #     Preserve the native permission list unless explicitly overridden.
+      dashboard_permissions: "{{prd_dashboard_permissions}}"

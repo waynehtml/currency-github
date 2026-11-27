@@ -1,0 +1,15 @@
+variables:
+ - name: adf_stg_datafactory_name
+   value: lake-cac-prd-adf-stgcurrency01
+ - name: adf_stg_subscription_id
+   value: 7c0bb47c-1b9b-4cb9-adbc-344efbe85bbc
+ - name: adf_stg_resource_group
+   value: lake-cac-prd-rg-stgcurrency
+ - name: adf_stg_region
+   value: Canada Central
+ - name: adf_stg_service_connection
+   value: lake-dscn-stgbocad01
+ - name: adf_stg_arm_parameters_file
+   value: arm_template_parameters.STG.json
+ - name: adf_stg_trigger_config_file
+   value: trigger_config_stg.yaml

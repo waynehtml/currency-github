@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Call_workflow_in_this_logic_app": {
+        "type": "Workflow",
+        "inputs": {
+          "host": {
+            "workflow": {
+              "id": "rcmp_email_extract"
+            }
+          }
+        },
+        "runAfter": {}
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "Recurrence": {
+        "type": "Recurrence",
+        "recurrence": {
+          "interval": 1,
+          "frequency": "Day",
+          "timeZone": "Eastern Standard Time",
+          "schedule": {
+            "hours": [
+              3
+            ],
+            "minutes": [
+              0
+            ]
+          }
+        },
+        "conditions": [],
+        "runtimeConfiguration": {
+          "concurrency": {
+            "runs": 20
+          }
+        }
+      }
+    }
+  },
+  "kind": "Stateful"
+}

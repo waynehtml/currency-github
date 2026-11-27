@@ -1,0 +1,42 @@
+{
+	"name": "trg_PL_Control_Main_CBN_ContainerAOC",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_CBN_Control_Main",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "containeraoc"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2025-07-04T12:10:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						35
+					],
+					"hours": [
+						8
+					],
+					"weekDays": [
+						"Monday",
+						"Tuesday",
+						"Wednesday",
+						"Thursday",
+						"Friday"
+					]
+				}
+			}
+		}
+	}
+}

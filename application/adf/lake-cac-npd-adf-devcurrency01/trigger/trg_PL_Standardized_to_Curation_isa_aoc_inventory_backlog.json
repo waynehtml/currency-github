@@ -1,0 +1,37 @@
+{
+	"name": "trg_PL_Standardized_to_Curation_isa_aoc_inventory_backlog",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Standardized_to_Curation",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "aoc_inventory_backlog",
+					"load_type": "incremental_load",
+					"mode": "append"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2023-11-24T14:22:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						15
+					],
+					"hours": [
+						3
+					]
+				}
+			}
+		}
+	}
+}

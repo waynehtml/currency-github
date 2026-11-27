@@ -1,0 +1,416 @@
+{
+	"name": "PL_Control_Dataflow_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "date",
+					"value": {
+						"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If Skip Sftp to AV",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Sftp_to_Av,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute SFTP to AV",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_SFTP_to_AV_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"hostname": {
+										"value": "@pipeline().parameters.p_src_hostname",
+										"type": "Expression"
+									},
+									"username": {
+										"value": "@pipeline().parameters.p_src_username",
+										"type": "Expression"
+									},
+									"key": {
+										"value": "@pipeline().parameters.p_src_key",
+										"type": "Expression"
+									},
+									"folder": {
+										"value": "@pipeline().parameters.p_src_folder",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip AV to Land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip Sftp to AV",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Av_to_Land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute AV to Land",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_AV_to_Land_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If  Skip Land to Raw",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip AV to Land",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Land_to_Raw, 1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute Land to Raw",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Raw_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@pipeline().parameters.site",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip Raw to Standardized",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip BN Converter",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Raw_to_Standard,1 )",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute Raw to Standardized",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Raw_to_Standardized_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@pipeline().parameters.site",
+										"type": "Expression"
+									},
+									"mode": {
+										"value": "@pipeline().parameters.mode",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip Archive FIles",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip Raw to Standardized",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Archive_Files, 1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Archive_Files",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Archive_Files",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"hostname": {
+										"value": "@pipeline().parameters.p_src_hostname",
+										"type": "Expression"
+									},
+									"username": {
+										"value": "@pipeline().parameters.p_src_username",
+										"type": "Expression"
+									},
+									"key": {
+										"value": "@pipeline().parameters.p_src_key",
+										"type": "Expression"
+									},
+									"folder": {
+										"value": "@pipeline().parameters.p_src_folder",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip BN Converter",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If  Skip Land to Raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(equals(pipeline().parameters.skip_Bn_Converter,1),not(equals(pipeline().parameters.file, 'bn')))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute Binary_Converter",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Binary_Converter2",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@pipeline().parameters.site",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"delta": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"skip_Sftp_to_Av": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Av_to_Land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Land_to_Raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Bn_Converter": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Raw_to_Standard": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Archive_Files": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"p_src_hostname": {
+				"type": "string",
+				"defaultValue": "192.168.15.119"
+			},
+			"p_src_username": {
+				"type": "string",
+				"defaultValue": "dl_maoc_qa_s"
+			},
+			"p_src_key": {
+				"type": "string",
+				"defaultValue": "M7-pass"
+			},
+			"p_src_folder": {
+				"type": "string",
+				"defaultValue": "/BOC/"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "append"
+			}
+		},
+		"variables": {
+			"date": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "M7/Control"
+		},
+		"annotations": []
+	}
+}

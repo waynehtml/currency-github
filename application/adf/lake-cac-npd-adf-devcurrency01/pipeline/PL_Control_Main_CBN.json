@@ -1,0 +1,205 @@
+{
+	"name": "PL_Control_Main_CBN",
+	"properties": {
+		"activities": [
+			{
+				"name": "If date is provided",
+				"description": "Prioritize file_name over file_date",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(equals(pipeline().parameters.file_date, null))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set diff dates",
+							"description": "Set file_date either from pipeline parameter or as the Monday of current week",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_Get_Diff_Dates",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_file_dates",
+								"value": {
+									"value": "@activity('PL_Get_Diff_Dates').output.pipelineReturnValue.dates",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PL_Get_Diff_Dates",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Get_Diff_Dates",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file_type": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Append file_date",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_file_dates",
+								"value": {
+									"value": "@pipeline().parameters.file_date",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If dates empty",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If date is provided",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@empty(variables('var_file_dates'))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Control_Dataflow_CBN",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Control_Dataflow_CBN",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file_type": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									},
+									"file_dates": {
+										"value": "@variables('var_file_dates')",
+										"type": "Expression"
+									},
+									"skip_source_to_land": {
+										"value": "@pipeline().parameters.skip_source_to_land",
+										"type": "Expression"
+									},
+									"skip_land_to_raw": {
+										"value": "@pipeline().parameters.skip_land_to_raw",
+										"type": "Expression"
+									},
+									"skip_raw_to_standard": {
+										"value": "@pipeline().parameters.skip_raw_to_standard",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "PL_Log_Notification - no diff date",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"skip_source_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"var_file_dates": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "CBN/archive/CBN"
+		},
+		"annotations": []
+	}
+}

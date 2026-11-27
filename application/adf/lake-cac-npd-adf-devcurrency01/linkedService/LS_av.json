@@ -1,0 +1,37 @@
+{
+	"name": "LS_av",
+	"properties": {
+		"parameters": {
+			"av_host": {
+				"type": "string"
+			},
+			"av_user": {
+				"type": "string"
+			},
+			"av_pass_secret": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "@{linkedService().av_host}",
+			"userId": "@{linkedService().av_user}",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_keyvault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": {
+					"value": "@linkedService().av_pass_secret",
+					"type": "Expression"
+				}
+			}
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

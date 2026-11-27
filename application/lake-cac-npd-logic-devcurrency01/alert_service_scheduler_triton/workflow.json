@@ -1,0 +1,34 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Call_workflow_in_this_logic_app": {
+        "type": "Workflow",
+        "inputs": {
+          "host": {
+            "workflow": {
+              "id": "alert_service"
+            }
+          },
+          "body": {
+            "config": "config-triton/alert_service/config.json"
+          }
+        },
+        "runAfter": {}
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "Recurrence": {
+        "type": "Recurrence",
+        "recurrence": {
+          "interval": 15,
+          "frequency": "Minute",
+          "timeZone": "Eastern Standard Time"
+        }
+      }
+    }
+  },
+  "kind": "Stateful"
+}

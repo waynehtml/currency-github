@@ -1,0 +1,40 @@
+{
+	"name": "00_PL_Setup_NES",
+	"properties": {
+		"activities": [
+			{
+				"name": "Setup",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@pipeline().globalParameters.gpm_nes_config.setup_notebook_path",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"env": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"folder": {
+			"name": "NES"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,38 @@
+{
+	"name": "trg_PL_Control_Main_BRS_QM15",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Control_Main_BRS",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"brs_filetype": "qm15"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2024-11-01T19:16:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						10
+					],
+					"hours": [
+						3
+					],
+					"weekDays": [
+						"Tuesday"
+					]
+				}
+			}
+		}
+	}
+}

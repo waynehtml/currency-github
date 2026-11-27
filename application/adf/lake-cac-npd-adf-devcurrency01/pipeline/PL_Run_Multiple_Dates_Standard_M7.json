@@ -1,0 +1,114 @@
+{
+	"name": "PL_Run_Multiple_Dates_Standard_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "lkp_Dates_File",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_file_type_dates",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": "config-currency",
+							"pm_folder": "common",
+							"pm_filename": "curr_file_type_load_dates.json"
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "ForEach",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "lkp_Dates_File",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lkp_Dates_File').output.firstRow.dates",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "PL_Raw_to_Standardized_M7_Load",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Raw_to_Standardized_M7_Load",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@item().date",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.p_input_file_type",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@pipeline().parameters.site",
+										"type": "Expression"
+									},
+									"mode": {
+										"value": "@pipeline().parameters.mode",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_input_file_type": {
+				"type": "string",
+				"defaultValue": "shift"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "overwrite"
+			}
+		},
+		"folder": {
+			"name": "Common"
+		},
+		"annotations": []
+	}
+}

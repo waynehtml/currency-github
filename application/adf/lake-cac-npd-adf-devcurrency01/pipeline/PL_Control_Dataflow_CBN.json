@@ -1,0 +1,298 @@
+{
+	"name": "PL_Control_Dataflow_CBN",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach date",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.file_dates",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "If skip_source_to_land",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(pipeline().parameters.skip_source_to_land,1)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "PL_source_to_Landing",
+										"type": "ExecutePipeline",
+										"dependsOn": [],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "PL_Source_to_Land_CBN",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"file_type": {
+													"value": "@pipeline().parameters.file_type",
+													"type": "Expression"
+												},
+												"file_date": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "Set file_names",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "PL_source_to_Landing",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "var_file_names",
+											"value": {
+												"value": "@activity('PL_source_to_Landing').output.pipelineReturnValue.filenames",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "If no file",
+							"description": "if file_name is empty, it means no file was found on the sftp server, then invoke the dummy pipeline to trigger a warning alert",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "If skip_source_to_land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@and(\n    equals(pipeline().parameters.skip_source_to_land, 0), \n    empty(variables('var_file_names'))\n)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Fail - no file found",
+										"type": "Fail",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"message": "no file found",
+											"errorCode": "404"
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "If skip_land_to_raw",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "If no file",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(pipeline().parameters.skip_land_to_raw,1)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Copy Land to Raw",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": false,
+													"wildcardFolderPath": {
+														"value": "@concat(pipeline().globalParameters.gpm_cbn_land_path, '/', pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', item())",
+														"type": "Expression"
+													},
+													"wildcardFileName": "*.*",
+													"deleteFilesAfterCompletion": true
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings"
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_land_binary",
+												"type": "DatasetReference",
+												"parameters": {
+													"pm_container": {
+														"value": "@pipeline().globalParameters.gpm_land_container",
+														"type": "Expression"
+													},
+													"pm_folder": {
+														"value": "@concat(pipeline().globalParameters.gpm_cbn_land_path, '/', pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', item())\n\n",
+														"type": "Expression"
+													},
+													"pm_filename": "*.*"
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_raw_binary",
+												"type": "DatasetReference",
+												"parameters": {
+													"pm_container": {
+														"value": "@pipeline().globalParameters.gpm_cbn_container",
+														"type": "Expression"
+													},
+													"pm_folder": {
+														"value": "@concat(\n    pipeline().globalParameters.gpm_cbn_raw_path,'/', \n    pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', \n    item())",
+														"type": "Expression"
+													},
+													"pm_filename": {
+														"value": "@null",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"name": "If skip_raw_to_standard",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "If skip_land_to_raw",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(pipeline().parameters.skip_raw_to_standard,1)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "raw_to_standardized",
+										"type": "DatabricksNotebook",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebookPath": {
+												"value": "/currency/cbn/raw_to_standardized",
+												"type": "Expression"
+											},
+											"baseParameters": {
+												"file_type": {
+													"value": "@pipeline().parameters.file_type",
+													"type": "Expression"
+												},
+												"file_date": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "LS_databricks_UC",
+											"type": "LinkedServiceReference"
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_dates": {
+				"type": "array"
+			},
+			"skip_source_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"var_file_names": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "CBN/archive/CBN"
+		},
+		"annotations": []
+	}
+}

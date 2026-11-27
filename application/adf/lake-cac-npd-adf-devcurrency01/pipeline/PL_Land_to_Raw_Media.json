@@ -1,0 +1,95 @@
+{
+	"name": "PL_Land_to_Raw_Media",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy File from Land to Raw",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"wildcardFolderPath": {
+								"value": "@pipeline().globalParameters.gpm_cision_media_land_path",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "@replace(pipeline().globalParameters.gpm_cision_media_file,'{date}',pipeline().parameters.run_date)",
+								"type": "Expression"
+							},
+							"deleteFilesAfterCompletion": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_land_binary_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": {
+								"value": "@pipeline().globalParameters.gpm_land_container",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@pipeline().globalParameters.gpm_cision_media_land_path",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_raw_binary_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": {
+								"value": "@pipeline().globalParameters.gpm_cision_media_lake_container",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat(pipeline().globalParameters.gpm_cision_media_raw_path,'/',pipeline().parameters.run_date)",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"run_date": {
+				"type": "string",
+				"defaultValue": "2025-02-26"
+			}
+		},
+		"variables": {
+			"yyyy_mm_dd_filepath": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cision/Sub Control"
+		},
+		"annotations": []
+	}
+}

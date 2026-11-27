@@ -1,0 +1,46 @@
+trigger: none
+
+pool:
+  name: dops-prdagntpl01
+
+variables:
+  environment: 'prd'
+  baseSourceFolder: '$(System.DefaultWorkingDirectory)/application/lake-cac-npd-logic-devcurrency01/.config/alert_service/alert_config/alert_service'
+  blobContainer: 'config-currency'
+  storageAccount: 'lakecacprdstprdland01'
+
+stages:
+- stage: UploadConfig
+  displayName: 'Upload config files to Blob'
+  jobs:
+  - job: Upload
+    displayName: 'Upload config to landing zone'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Upload all project folders to blob storage'
+      inputs:
+        azureSubscription: 'lake-dscn-prdbocad01'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Starting batch upload from $(baseSourceFolder)..."
+
+          for projectFolder in $(baseSourceFolder)/*; do
+            if [ -d "$projectFolder" ]; then
+              projectName=$(basename "$projectFolder")
+              blobPrefix="alert_service/$projectName/"
+
+              echo "Uploading files from $projectFolder to blob container $(blobContainer) at prefix $blobPrefix"
+
+              az storage blob upload-batch \
+                --account-name $(storageAccount) \
+                --destination "$(blobContainer)/$blobPrefix" \
+                --source "$projectFolder" \
+                --auth-mode login \
+                --overwrite
+
+              echo "Uploaded $projectName files."
+            fi
+          done
+
+          echo "All uploads completed."

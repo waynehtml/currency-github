@@ -1,0 +1,41 @@
+{
+	"name": "LS_FS_Rdrive",
+	"properties": {
+		"description": "Used to read files from the R Drive using the currency production AD account for Datastage Jobs",
+		"parameters": {
+			"file_path": {
+				"type": "string",
+				"defaultValue": "\\\\svm1\\home\\asd\\datastg\\isdata\\csep\\ais\\isSource\\CSA\\LANDING\\*.xml"
+			},
+			"ad_user_name": {
+				"type": "string",
+				"defaultValue": "bocad\\crdp_dscurr_oppl_s"
+			},
+			"kv_pass_key": {
+				"type": "string",
+				"defaultValue": "crdp-dscurr-oppl-s-pass"
+			}
+		},
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "@{linkedService().file_path}",
+			"userId": "@{linkedService().ad_user_name}",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_keyvault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": {
+					"value": "@linkedService().kv_pass_key",
+					"type": "Expression"
+				}
+			}
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

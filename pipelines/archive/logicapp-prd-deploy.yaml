@@ -1,0 +1,75 @@
+trigger: none
+
+pool:
+  name:  dops-prdagntpl01
+
+variables:
+  # Fixed for this environment
+  environment: 'prd'
+  # Logic app name
+  logicAppName: 'lake-cac-prd-logic-prdcurrency01'
+  # Working directory
+  workingDirectory: '$(System.DefaultWorkingDirectory)/application/lake-cac-npd-logic-devcurrency01'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    # 1) Inject the right environment files
+    - script: |
+        echo "Injecting $(environment) parameters & connections"
+        cp "$(workingDirectory)/.deploy/$(environment)/parameters.json" "$(workingDirectory)/parameters.json"
+        cp "$(workingDirectory)/.deploy/$(environment)/connections.json"  "$(workingDirectory)/connections.json"
+      displayName: 'Inject env-specific configs'
+
+    # 2) Archive the entire Logic App folder (now containing the right configs)
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(workingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(logicAppName).zip'
+        replaceExistingArchive: true
+
+    # 3) Publish the zip
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy Logic App'
+
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - script: |
+        echo "Unzipping artifact..."
+        unzip "$(System.ArtifactsDirectory)/drop/$(logicAppName).zip" -d "$(System.ArtifactsDirectory)/drop"
+      displayName: 'Unzip artifact'
+
+    - task: AzureFunctionApp@2
+      displayName: 'Azure Logic App Deploy'
+      inputs:
+        azureSubscription: 'lake-dscn-prdbocad01'  # Replace with your service connection name
+        appType: 'functionApp'
+        appName: '$(logicAppName)'
+        package: '$(System.ArtifactsDirectory)/drop/$(logicAppName).zip'
+        deploymentMethod: 'zipDeploy'
+        verbosity: 'Verbose'

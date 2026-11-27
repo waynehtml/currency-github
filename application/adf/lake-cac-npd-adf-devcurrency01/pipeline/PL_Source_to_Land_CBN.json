@@ -1,0 +1,538 @@
+{
+	"name": "PL_Source_to_Land_CBN",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get files in file year",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set source folder",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set filename",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_FS_rdrive_binary_file",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": "svm1",
+							"file_path": {
+								"value": "@variables('var_src_folder')",
+								"type": "Expression"
+							},
+							"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+							"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+							"filename": {
+								"value": "@variables('var_src_filename')",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "For each file",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "If file not found in file year",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('var_files')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy files from source to AV",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Append filename",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "FileServerWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_FS_rdrive_binary_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": "svm1",
+										"file_path": {
+											"value": "@variables('var_src_folder')",
+											"type": "Expression"
+										},
+										"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+										"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+										"filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "@pipeline().globalParameters.gpm_av_pass_key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_cbn_av_path, '/', pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy file from AV to Land_copy1",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Wait 3 seconds for Anti-virus scan",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "@pipeline().globalParameters.gpm_av_pass_key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_cbn_av_path, '/', pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_cbn_land_path, '/', pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['raw'], '/', pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Wait 3 seconds for Anti-virus scan",
+							"description": "",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "Copy files from source to AV",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 3
+							}
+						},
+						{
+							"name": "Append filename",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_filenames",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set source folder",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set fileyear",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_src_folder",
+					"value": {
+						"value": "@concat(\n    pipeline().globalParameters.gpm_cbn_drive_path,'\\',\n    string(variables('var_src_fileyear')),'\\',\n    pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['folder'])",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set filename",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_src_filename",
+					"value": {
+						"value": "@replace(\n    pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['filename'],\n    '{date}',\n    replace(pipeline().parameters.file_date,'-','')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set return value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "For each file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "filenames",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('var_filenames')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "Set fileyear",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_src_fileyear",
+					"value": {
+						"value": "@int(substring(pipeline().parameters.file_date, 0, 4))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If file not found in file year",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Get files in file year",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@empty(activity('Get files in file year').output.childItems)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set files from file year",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_files",
+								"value": {
+									"value": "@activity('Get files in file year').output.childItems",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Set source folder with next year",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_src_folder",
+								"value": {
+									"value": "@concat(\n    pipeline().globalParameters.gpm_cbn_drive_path,'\\',\n    string(add(variables('var_src_fileyear'), 1)),'\\',\n    pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['folder'])",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get files in next year folder",
+							"type": "GetMetadata",
+							"dependsOn": [
+								{
+									"activity": "Set source folder with next year",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_FS_rdrive_binary_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": "svm1",
+										"file_path": {
+											"value": "@variables('var_src_folder')",
+											"type": "Expression"
+										},
+										"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+										"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+										"filename": {
+											"value": "@variables('var_src_filename')",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Set files from next year",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get files in next year folder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_files",
+								"value": {
+									"value": "@activity('Get files in next year folder').output.childItems",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_date": {
+				"type": "string",
+				"defaultValue": "2025-06-03"
+			}
+		},
+		"variables": {
+			"var_filenames": {
+				"type": "Array"
+			},
+			"var_src_folder": {
+				"type": "String"
+			},
+			"var_src_filename": {
+				"type": "String"
+			},
+			"var_src_fileyear": {
+				"type": "Integer"
+			},
+			"var_files": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "CBN/archive/CBN/Dynamic"
+		},
+		"annotations": []
+	}
+}

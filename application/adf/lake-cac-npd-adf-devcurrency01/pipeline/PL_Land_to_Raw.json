@@ -1,0 +1,150 @@
+{
+	"name": "PL_Land_to_Raw",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach  - Folder",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.param_folders",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy Land to Raw",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.param_land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().parameters.param_land_root,'/',item())",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.param_raw_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().parameters.param_raw_root,'/',item())",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Delete land folder",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Copy Land to Raw",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_land_binary_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": "@pipeline().parameters.param_land_container",
+										"pm_folder": "@concat(pipeline().parameters.param_land_root,'/',item())"
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"param_land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"param_land_root": {
+				"type": "string",
+				"defaultValue": "cbn/ssn"
+			},
+			"param_raw_container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"param_raw_root": {
+				"type": "string",
+				"defaultValue": "raw/external/cbn/ssn"
+			},
+			"param_folders": {
+				"type": "array",
+				"defaultValue": [
+					"2025-06-30"
+				]
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

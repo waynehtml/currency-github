@@ -1,0 +1,148 @@
+{
+	"name": "_Test_SFTP_AV_Connection",
+	"properties": {
+		"activities": [
+			{
+				"name": "Test SFTP Connection",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "SftpReadSettings",
+							"recursive": true,
+							"wildcardFileName": "BNList*",
+							"deleteFilesAfterCompletion": false,
+							"disableChunking": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "FileServerWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@pipeline().globalParameters.gpm_sftp_host",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@pipeline().globalParameters.gpm_sftp_user",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "M7-pass",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "/BOC/",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_av_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_host": {
+								"value": "@pipeline().globalParameters.gpm_av_host",
+								"type": "Expression"
+							},
+							"pm_user": {
+								"value": "@pipeline().globalParameters.gpm_av_user",
+								"type": "Expression"
+							},
+							"pm_key": {
+								"value": "lake-avscan-password",
+								"type": "Expression"
+							},
+							"pm_folder": "currency/bn/test",
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Test AV Connection",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Test SFTP Connection",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_av_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_host": {
+								"value": "@pipeline().globalParameters.gpm_av_host",
+								"type": "Expression"
+							},
+							"pm_user": {
+								"value": "@pipeline().globalParameters.gpm_av_user",
+								"type": "Expression"
+							},
+							"pm_key": "lake-avscan-password",
+							"pm_folder": "currency/bn/test",
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"wildcardFileName": "*",
+						"enablePartitionDiscovery": false
+					}
+				}
+			}
+		],
+		"folder": {
+			"name": "M7/Test"
+		},
+		"annotations": []
+	}
+}

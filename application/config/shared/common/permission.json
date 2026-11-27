@@ -1,0 +1,139 @@
+{
+  "catalog": [
+    {
+      "name": "_currency_cat"
+    }
+  ],
+  "group": [
+    {
+      "name": "lake_currencydata_rusr",
+      "type": "bre"
+    },
+    {
+      "name": "lake_dataopen_rusr",
+      "type": "legacy"
+    }
+  ],
+  "permissions": [
+    {
+      "name": "standardized_db.tbl_isa_4000perparcel",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_4ons",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_acdptrace",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_deposittohc",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_emscontainersnapshot",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_extracthstbtransfer",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_extractreissnotes",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_hctoclient",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_incompletedepositinfo",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_inventorysnapshot",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_isa_preadvisementdata",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_m7_bnlist",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_m7_counts",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_m7_rejects",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_m7_unfits",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "curated_db.tbl_4ons",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_opp",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_ssn",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_dailyprocessing",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_bpsreport",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_productionstats",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_containeraoc",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_containerqa",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_qm_labdata",
+      "grant": ["lake_currencydata_rusr"]
+    },
+    {
+      "name": "standardized_db.tbl_cbn_processlitho",
+      "grant": ["lake_currencydata_rusr"]
+    },
+        {
+      "name": "standardized_db.tbl_cbn_processintaglio",
+      "grant": ["lake_currencydata_rusr"]
+    },
+        {
+      "name": "standardized_db.tbl_cbn_processtype",
+      "grant": ["lake_currencydata_rusr"]
+    },
+        {
+      "name": "standardized_db.tbl_cbn_processtactile",
+      "grant": ["lake_currencydata_rusr"]
+    },
+        {
+      "name": "standardized_db.tbl_cbn_processvarnish",
+      "grant": ["lake_currencydata_rusr"]
+    },
+        {
+      "name": "standardized_db.tbl_cbn_finishedsheet",
+      "grant": ["lake_currencydata_rusr"]
+    }
+  ]
+}

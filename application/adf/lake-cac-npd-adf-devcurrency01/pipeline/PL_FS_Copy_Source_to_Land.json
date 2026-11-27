@@ -1,0 +1,476 @@
+{
+	"name": "PL_FS_Copy_Source_to_Land",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get files",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_FS_rdrive_binary_file",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": "svm1",
+							"file_path": {
+								"value": "@pipeline().parameters.param_file_path",
+								"type": "Expression"
+							},
+							"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+							"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+							"filename": "@null"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Set return values - Null for no folder",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get files",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Null",
+								"content": []
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "Set return values",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach - new_filenames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Expression",
+								"content": "@union(variables('var_dates'), json('[]'))"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "ForEach - new_filenames",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "If new file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@if(equals(pipeline().parameters.new_1_or_matched_0,1), \n    activity('get_new_files').output.pipelineReturnValue.value,\n    variables('var_filenames') \n)",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set date",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "extract_date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_date",
+								"value": {
+									"value": "@activity('extract_date').output.pipelineReturnValue.value",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Append dates",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy files from FS to Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@variables('var_date')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy files from FS to Land",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Set date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_FS_rdrive_binary_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": "svm1",
+										"file_path": "@pipeline().parameters.param_file_path",
+										"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+										"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+										"filename": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.param_land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().parameters.param_land_path,'/',variables('var_date'))",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "extract_date",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Call_AZF_Func",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"function": "extractDate",
+									"parameters": {
+										"value": "@json(\n    concat(\n    '{',\n    '\"str\":\"', item(), '\",',\n    '\"regex\":\"', pipeline().parameters.param_date_regex, '\",',\n    '\"iformat\":\"',pipeline().parameters.param_date_iformat, '\",',\n    '\"oformat\":\"', pipeline().parameters.param_date_oformat, '\"',\n    '}'\n))",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter files",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get files').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(\n    equals(item().type, 'File'), \n    if(empty(pipeline().parameters.param_file_pattern), true,\n        contains(item().name, pipeline().parameters.param_file_pattern))\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If new file",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set filenames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.new_1_or_matched_0, 1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "get_new_files",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Call_DBK_Func",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_name": "find_new_files",
+									"param_args": {
+										"value": "@json(\n    concat(\n    '{',\n    '\"files\":\"', join(variables('var_filenames'),'|'), '\",',\n    '\"raw_container\":\"', pipeline().parameters.param_raw_container, '\",',\n    '\"raw_path\":\"',pipeline().parameters.param_raw_path, '\",',\n    '}'\n))",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "PL_Call_AZF_Func",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Set variable1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Call_AZF_Func",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"function": "extractValues",
+						"parameters": {
+							"value": "@concat(\n    '{',\n    '\"array\":',string(activity('Filter files').output.value), ',',\n     '\"key\":\"name\"',\n    '}')\n",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Filter files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_body",
+					"value": {
+						"value": "@concat(\n    '{',\n    '\"str\":\"',string(activity('Filter files').output.value), '\",',\n     '\"key\":\"name\"',\n    '}'\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set filenames",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "PL_Call_AZF_Func",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_filenames",
+					"value": {
+						"value": "@activity('PL_Call_AZF_Func').output.pipelineReturnValue.value",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"new_1_or_matched_0": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"param_file_path": {
+				"type": "string",
+				"defaultValue": "\\\\10.210.129.109\\sni_dc1_prd_data_vol01\\SNSFILES\\CBN\\2025\\ssn"
+			},
+			"param_file_pattern": {
+				"type": "string"
+			},
+			"param_raw_container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"param_raw_path": {
+				"type": "string",
+				"defaultValue": "raw/external/cbn/ssn"
+			},
+			"param_land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"param_land_path": {
+				"type": "string",
+				"defaultValue": "cbn/ssn"
+			},
+			"param_date_regex": {
+				"type": "string",
+				"defaultValue": "-(\\\\d{8})"
+			},
+			"param_date_iformat": {
+				"type": "string",
+				"defaultValue": "yyyyMMdd"
+			},
+			"param_date_oformat": {
+				"type": "string",
+				"defaultValue": "yyyy-MM-dd"
+			}
+		},
+		"variables": {
+			"var_filenames": {
+				"type": "Array"
+			},
+			"var_date": {
+				"type": "String"
+			},
+			"var_dates": {
+				"type": "Array"
+			},
+			"var_body": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/archive"
+		},
+		"annotations": []
+	}
+}

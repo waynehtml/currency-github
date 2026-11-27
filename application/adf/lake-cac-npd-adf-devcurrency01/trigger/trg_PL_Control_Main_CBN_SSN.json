@@ -1,0 +1,45 @@
+{
+	"name": "trg_PL_Control_Main_CBN_SSN",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_CBN_Control_Main",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "ssn",
+					"skip_source_to_land": 0,
+					"skip_land_to_raw": 0,
+					"skip_raw_to_standard": 0
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2025-06-18T15:22:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						8
+					],
+					"weekDays": [
+						"Monday",
+						"Tuesday",
+						"Wednesday",
+						"Thursday",
+						"Friday"
+					]
+				}
+			}
+		}
+	}
+}

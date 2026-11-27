@@ -1,0 +1,17 @@
+{
+	"name": "DS_config_json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_landingzone",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation"
+			}
+		},
+		"schema": {}
+	}
+}

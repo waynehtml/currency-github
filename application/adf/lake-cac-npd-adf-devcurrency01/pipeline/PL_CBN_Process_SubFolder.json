@@ -1,0 +1,321 @@
+{
+	"name": "PL_CBN_Process_SubFolder",
+	"properties": {
+		"activities": [
+			{
+				"name": "Skip source_to_land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set ds_map",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_source_to_land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_Source_to_Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@activity('PL_Source_to_Land').output.pipelineReturnValue.dates",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PL_Source_to_Land",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Source_to_Land",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_src_connection": {
+										"value": "@json(concat(\n        '{',\n        '\"path\":\"', concat(\n            replace(json(variables('var_ds_map'))['path'],'\\','\\\\'), \n            '\\\\', pipeline().parameters.folder,\n            '\\\\', replace(json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['src_folder'],'\\','\\\\')), '\",',\n        '\"type\":\"FS\"',\n        '}'))",
+										"type": "Expression"
+									},
+									"param_file_date": {
+										"value": "@if(empty(pipeline().parameters.file_date), pipeline().parameters.file_date, replace(pipeline().parameters.file_date,'-',''))",
+										"type": "Expression"
+									},
+									"param_file_pattern": {
+										"value": "@json(variables('var_ds_map'))['file_pattern']",
+										"type": "Expression"
+									},
+									"param_raw_container": {
+										"value": "@json(variables('var_ds_map'))['raw_container']",
+										"type": "Expression"
+									},
+									"param_raw_path": {
+										"value": "@concat(json(variables('var_ds_map'))['raw_root'],'/',json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder'])",
+										"type": "Expression"
+									},
+									"param_land_container": {
+										"value": "@json(variables('var_ds_map'))['land_container']",
+										"type": "Expression"
+									},
+									"param_land_path": {
+										"value": "@concat(json(variables('var_ds_map'))['land_root'],'/',json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder'])",
+										"type": "Expression"
+									},
+									"param_date_regex": {
+										"value": "@json(variables('var_ds_map'))['date_regex']",
+										"type": "Expression"
+									},
+									"param_date_iformat": {
+										"value": "@json(variables('var_ds_map'))['date_iformat']",
+										"type": "Expression"
+									},
+									"param_date_oformat": {
+										"value": "@json(variables('var_ds_map'))['date_oformat']",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Append file_date",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@pipeline().parameters.file_date",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Skip land_to_raw",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Skip source_to_land",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    equals(pipeline().parameters.skip_land_to_raw,1),\n    empty(variables('var_dates'))\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Land_to_Raw",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Raw",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_land_container": {
+										"value": "@json(variables('var_ds_map'))['land_container']",
+										"type": "Expression"
+									},
+									"param_land_root": {
+										"value": "@concat(\n    json(variables('var_ds_map'))['land_root'],'/',\n    json(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder']\n)",
+										"type": "Expression"
+									},
+									"param_raw_container": {
+										"value": "@json(variables('var_ds_map'))['raw_container']\n",
+										"type": "Expression"
+									},
+									"param_raw_root": {
+										"value": "@concat(\n    json(variables('var_ds_map'))['raw_root'],'/',\n\tjson(variables('var_ds_map'))['ds'][pipeline().parameters.file_type]['raw_folder']\n)",
+										"type": "Expression"
+									},
+									"param_folders": {
+										"value": "@variables('var_dates')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Skip raw_to_standard",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Skip land_to_raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    equals(pipeline().parameters.skip_raw_to_standard,1),\n    empty(variables('var_dates'))\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Raw_to_Standard",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Raw_to_Standard",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"notebook": "/currency/cbn/raw_to_standardized",
+									"file_dates": {
+										"value": "@variables('var_dates')",
+										"type": "Expression"
+									},
+									"file_type": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set ds_map",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_ds_map",
+					"value": {
+						"value": "@string(pipeline().globalParameters.gpm_cbn)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set return value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Skip raw_to_standard",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('var_dates')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"folder": {
+				"type": "string"
+			},
+			"skip_source_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"var_dates": {
+				"type": "Array",
+				"defaultValue": []
+			},
+			"var_continue": {
+				"type": "Integer",
+				"defaultValue": 1
+			},
+			"var_ds_map": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "CBN"
+		},
+		"annotations": []
+	}
+}

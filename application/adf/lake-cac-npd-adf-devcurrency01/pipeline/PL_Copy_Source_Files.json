@@ -1,0 +1,221 @@
+{
+	"name": "PL_Copy_Source_Files",
+	"properties": {
+		"description": "{\"path\":\"\\\\\\\\10.210.129.109\\\\sni_dc1_prd_data_vol01\\\\SNSFILES\\\\CBN\\\\2025\\\\ssn\"} \n{\"type\":\"SPO\",\"drive_id\":\"b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8\",\"path\":\"Reports-Ottawa/Datalake_Files\"}",
+		"activities": [
+			{
+				"name": "Connection Type",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.param_src_connection['type']",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "FS",
+							"activities": [
+								{
+									"name": "Copy files from FS to Land",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "FileServerReadSettings",
+												"recursive": false,
+												"deleteFilesAfterCompletion": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_FS_rdrive_binary_file",
+											"type": "DatasetReference",
+											"parameters": {
+												"host_name": "svm1",
+												"file_path": {
+													"value": "@replace(pipeline().parameters.param_src_connection['path'],'/','\\')",
+													"type": "Expression"
+												},
+												"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+												"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+												"filename": {
+													"value": "@pipeline().parameters.param_file_name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().parameters.param_land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@pipeline().parameters.param_land_path",
+													"type": "Expression"
+												},
+												"pm_filename": {
+													"value": "@pipeline().parameters.param_file_name",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						},
+						{
+							"value": "SPO",
+							"activities": [
+								{
+									"name": "Execute Pipeline",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_SPO_Get_Bearer_Token",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true
+									}
+								},
+								{
+									"name": "Copy files From SPO to Land",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "Execute Pipeline",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "HttpReadSettings",
+												"requestMethod": "GET",
+												"additionalHeaders": {
+													"value": "@{concat('Authorization: Bearer ', activity('Execute Pipeline').output.pipelineReturnValue.token)}",
+													"type": "Expression"
+												},
+												"requestTimeout": ""
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_Binary_SPO",
+											"type": "DatasetReference",
+											"parameters": {
+												"relative_path": {
+													"value": "@concat(pipeline().parameters.param_src_connection['drive_id'],\n    '/root:/', pipeline().parameters.param_src_connection['path'],\n    '/',pipeline().parameters.param_file_name, ':/content')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().parameters.param_land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@pipeline().parameters.param_land_path",
+													"type": "Expression"
+												},
+												"pm_filename": {
+													"value": "@pipeline().parameters.param_file_name",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"param_src_connection": {
+				"type": "object",
+				"defaultValue": {
+					"type": "SPO",
+					"drive_id": "b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8",
+					"path": "Reports-Ottawa/Datalake_Files"
+				}
+			},
+			"param_file_name": {
+				"type": "string"
+			},
+			"param_land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"param_land_path": {
+				"type": "string",
+				"defaultValue": "test"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,36 @@
+{
+	"name": "trg_PL_Control_Main_ISA_4000PerParcel",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Control_Main_ISA",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file": "4000PerParcel",
+					"delta": 1
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2023-03-09T08:00:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						30
+					],
+					"hours": [
+						1
+					]
+				}
+			}
+		}
+	}
+}

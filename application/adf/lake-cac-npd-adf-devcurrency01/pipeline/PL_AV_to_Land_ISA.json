@@ -1,0 +1,102 @@
+{
+	"name": "PL_AV_to_Land_ISA",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy AV to Land",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "FileServerReadSettings",
+							"recursive": false,
+							"wildcardFileName": "*.csv",
+							"deleteFilesAfterCompletion": true
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_av_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_host": {
+								"value": "@pipeline().globalParameters.gpm_av_host",
+								"type": "Expression"
+							},
+							"pm_user": {
+								"value": "@pipeline().globalParameters.gpm_av_user",
+								"type": "Expression"
+							},
+							"pm_key": {
+								"value": "lake-avscan-password",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat('currency/',substring(pipeline().parameters.file,0,4))",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_land_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": {
+								"value": "@pipeline().parameters.land_currency",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat('ISA/',substring(pipeline().parameters.file,0,4))",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"land_currency": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			}
+		},
+		"folder": {
+			"name": "ISA/Dynamic"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,40 @@
+{
+	"name": "LS_sftp",
+	"properties": {
+		"parameters": {
+			"host_name": {
+				"type": "string"
+			},
+			"user_name": {
+				"type": "string"
+			},
+			"key_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Sftp",
+		"typeProperties": {
+			"host": "@{linkedService().host_name}",
+			"port": 22,
+			"skipHostKeyValidation": true,
+			"authenticationType": "Basic",
+			"userName": "@{linkedService().user_name}",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_keyvault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": {
+					"value": "@linkedService().key_name",
+					"type": "Expression"
+				}
+			}
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

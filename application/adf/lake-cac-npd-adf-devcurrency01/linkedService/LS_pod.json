@@ -1,0 +1,22 @@
+{
+	"name": "LS_pod",
+	"properties": {
+		"parameters": {
+			"storage_account": {
+				"type": "string",
+				"defaultValue": "lakecacnpdstdevland01"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "@{concat('https://',linkedService().storage_account,'.blob.core.windows.net/')}",
+			"url": "@{concat('https://',linkedService().storage_account,'.dfs.core.windows.net/')}",
+			"accountKind": "StorageV2"
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

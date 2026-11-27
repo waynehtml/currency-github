@@ -1,0 +1,23 @@
+[
+	{
+		"sources" :
+			{
+			site:"maoc",
+			hostname: "10.15.215.52",
+			username: "ccms_dlsftp_oppa_s",
+			key:"M7-pass",
+			folder:"/BOC/"
+			}
+	},
+	
+	{
+		"sources" :
+			{
+			site:"taoc",
+			hostname: "10.16.216.52",
+			username: "ccms_dlsftp_oppa_s",
+			key:"taoc-pass",
+			folder:"/BOC/"
+			}
+	}
+]

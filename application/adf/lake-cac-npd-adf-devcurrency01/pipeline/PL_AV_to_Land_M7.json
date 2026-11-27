@@ -1,0 +1,262 @@
+{
+	"name": "PL_AV_to_Land_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "If BN or Shift",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.file,'bn')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Shift - AV to Land",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "currency/shift/balance/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/shift/balance/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": "land-currency",
+										"pm_folder": "m7/shift/balance/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "HC - AV to Land",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Shift - AV to Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "currency/shift/hc/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/shift/hc/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": "land-currency",
+										"pm_folder": "m7/shift/hc/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "BN - AV to Land",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": true,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/bn/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": "land-currency",
+										"pm_folder": "m7/bn/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,55 @@
+{
+	"name": "DS_sftp_binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_sftp",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"host_name": {
+					"value": "@dataset().pm_hostname",
+					"type": "Expression"
+				},
+				"user_name": {
+					"value": "@dataset().pm_username",
+					"type": "Expression"
+				},
+				"key_name": {
+					"value": "@dataset().pm_keyname",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"pm_hostname": {
+				"type": "string"
+			},
+			"pm_username": {
+				"type": "string"
+			},
+			"pm_keyname": {
+				"type": "string"
+			},
+			"pm_folder": {
+				"type": "string"
+			},
+			"pm_filename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "SftpLocation",
+				"fileName": {
+					"value": "@dataset().pm_filename",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().pm_folder",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

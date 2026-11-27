@@ -1,0 +1,258 @@
+{
+	"name": "PL_Control_Main_BRS",
+	"properties": {
+		"activities": [
+			{
+				"name": "If skip_sftp_to_land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If file date provided",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_sftp_to_land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_SFTP_to_Landing_BRS",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_SFTP_to_Landing_BRS",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"brs_filetype": {
+										"value": "@pipeline().parameters.brs_filetype",
+										"type": "Expression"
+									},
+									"file_date": {
+										"value": "@variables('file_date')",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Set file count from copied",
+							"description": "",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_SFTP_to_Landing_BRS",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_count",
+								"value": {
+									"value": "@activity('PL_SFTP_to_Landing_BRS').output.pipelineReturnValue.file_count",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If file date provided",
+				"description": "Prioritize file_name over file_date",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(equals(pipeline().parameters.file_date, null))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set file date as this Monday",
+							"description": "Set file_date either from pipeline parameter or as the Monday of current week",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_date",
+								"value": {
+									"value": "@formatDateTime(addDays(utcNow(), sub(1, dayOfWeek(utcNow()))), 'yyyy-MM-dd')",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Set file date from param",
+							"description": "",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_date",
+								"value": {
+									"value": "@pipeline().parameters.file_date",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If files copied",
+				"description": "",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If skip_sftp_to_land",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    greater(variables('file_count'), 0),\n    equals(pipeline().parameters.skip_sftp_to_land,1))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Log_Notification",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.brs_filetype",
+										"type": "Expression"
+									},
+									"key2": {
+										"value": "@pipeline().parameters.file_date",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "PL_Land_to_Standard_BRS",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Standardized_BRS",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"brs_filetype": {
+										"value": "@pipeline().parameters.brs_filetype",
+										"type": "Expression"
+									},
+									"file_date": {
+										"value": "@variables('file_date')",
+										"type": "Expression"
+									},
+									"skip_land_to_raw": {
+										"value": "@pipeline().parameters.skip_land_to_raw",
+										"type": "Expression"
+									},
+									"skip_raw_to_standard": {
+										"value": "@pipeline().parameters.skip_raw_to_standard",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"brs_filetype": {
+				"type": "string",
+				"defaultValue": "qm11"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"skip_sftp_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"file_date": {
+				"type": "String"
+			},
+			"file_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			}
+		},
+		"folder": {
+			"name": "SAP/Control"
+		},
+		"annotations": []
+	}
+}

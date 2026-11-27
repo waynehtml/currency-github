@@ -1,0 +1,197 @@
+{
+	"name": "PL_Archive_Files_NES",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy Files To Archive",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "SftpReadSettings",
+							"recursive": false,
+							"wildcardFileName": {
+								"value": "@concat('nes_', pipeline().parameters.file, '_', replace(pipeline().parameters.date, '-', '_'), '*.csv')",
+								"type": "Expression"
+							},
+							"deleteFilesAfterCompletion": false,
+							"disableChunking": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "SftpWriteSettings",
+							"operationTimeout": "01:00:00",
+							"useTempFileRename": true
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat(\n    if(\n        equals(pipeline().globalParameters.gpm_env,'dev'),\n        pipeline().globalParameters.gpm_nes_config.sftp_archive_folder_dev,\n        pipeline().globalParameters.gpm_nes_config.sftp_archive_folder_stg_prd\n    ),\n    pipeline().parameters.file,\n    '/',\n    pipeline().parameters.date,\n    '/'\n)",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "If No Files Copied",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Copy Files To Archive",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Copy Files To Archive').output.filesWritten, 0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Delete Copied Files",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_sftp_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_hostname": {
+											"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+											"type": "Expression"
+										},
+										"pm_username": {
+											"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+											"type": "Expression"
+										},
+										"pm_keyname": {
+											"value": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+											"type": "Expression"
+										},
+										"pm_filename": "@null"
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "SftpReadSettings",
+									"recursive": false,
+									"wildcardFileName": {
+										"value": "@concat('nes_', pipeline().parameters.file, '_', replace(pipeline().parameters.date, '-', '_'), '*.csv')",
+										"type": "Expression"
+									},
+									"enablePartitionDiscovery": false,
+									"disableChunking": false
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Fail - No Files Archived",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "No files were copied to the archive location. Delete operation was stopped to prevent accidental data loss.",
+								"errorCode": "NO_FILES_ARCHIVED"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "NES/Dynamic"
+		},
+		"annotations": []
+	}
+}

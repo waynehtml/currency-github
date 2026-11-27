@@ -1,0 +1,62 @@
+﻿Reject Reason,Reject Grouping
+CommonError,Serial Number
+SerNumberInBlackList,Serial Number
+ChecksumError,Serial Number
+SerNumberVerifyNotOK,Serial Number
+SerNumberCorrelation,Serial Number
+RawSerNrLengthFailure,Serial Number
+SerNumberNotFullyDetected,Serial Number
+TransportCLF,Other
+ObjectWidth,Physical Defect
+MPCforcedRJ,Mechanical
+NoDenomConfig,Denomination
+Invalid sorting class,Other
+No OC,Mechanical
+Reject,Other
+Multiple OC busy,Mechanical
+Compact OC busy,Mechanical
+No IP,Other
+No sorting information,Other
+OC busy,Mechanical
+Jam,Mechanical
+Asychronous,Mechanical
+Close feed,Mechanical
+Too long,Physical Defect
+R_InternalError_GSL2,Mechanical
+R_InternalError_GSL1,Mechanical
+R_InternalError,Mechanical
+R_SIL,R_SIL
+R_Mag_SoftDist,R_Mag_SoftDist
+R_UV_Phos,R_UV_Phos
+R_UV_Dull,R_UV_Dull
+R_Tear,Physical Defect
+R_SNSearchlistAlarm,Serial Number
+R_SNSearchlist,Serial Number
+R_SN_Unreadable,Serial Number
+R_NSCInk,R_NSCInk
+R_MAG_Thread,R_MAG_Thread
+R_MAG_Snr,R_MAG_Snr
+R_MAG_ReadCodeElem,R_MAG_ReadCodeElem
+R_MAG_Print_soft,Authentication
+R_MAG_Print,R_MAG_Print
+R_MAG_Paper,R_MAG_Paper
+R_MAG_CodeElongation,R_MAG_CodeElongation
+R_Hole,Physical Defect
+R_Folded_Corner,Physical Defect
+R_SN_Composed,Serial Number
+R_Composed,Composed
+R_NSC2R_IR,Authentication
+R_Orientation,Orientation
+R_Deno_ext,Denomination
+R_Denomination,Denomination
+R_WrongDeno,Denomination
+R_Confidence,Denomination
+R_BBD,Authentication
+R_CDIR1,R_CDIR1
+R_CDIL1,R_CDIL1
+R_Note_Format,Physical Defect
+R_SkewRun,Mechanical
+R_HighRun,Mechanical
+R_MultipleItem,Mechanical
+R_HC,Header Card
+R_VS_HologramPresent,Authentication

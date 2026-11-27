@@ -1,0 +1,62 @@
+# Copy this generic wrapper into a domain repository and register it as a pipeline.
+# The domain repository must provide matching files under /pipelines/variables/.
+
+# Dependent repository variable templates:
+# - /pipelines/variables/common.yaml:
+#   - agent_pool_name
+#   - agent_image
+#   - functionapp_source_folder
+# - /pipelines/variables/dev.yaml, /pipelines/variables/stg.yaml, and /pipelines/variables/prd.yaml:
+#   - service_connection
+#   - functionapp_name
+
+trigger: none
+pr: none
+
+parameters:
+  - name: environment
+    displayName: Target Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - stg
+      - prd
+
+  - name: node_version
+    displayName: Node.js Version
+    type: string
+    default: '18.16.0'
+    values:
+      - '18.16.0'
+
+variables:
+  - template: /pipelines/variables/common.yaml
+
+  - ${{ if eq(parameters.environment, 'dev') }}:
+      - template: /pipelines/variables/dev.yaml
+  - ${{ if eq(parameters.environment, 'stg') }}:
+      - template: /pipelines/variables/stg.yaml
+  - ${{ if eq(parameters.environment, 'prd') }}:
+      - template: /pipelines/variables/prd.yaml
+
+pool:
+  name: $(agent_pool_name)
+  demands:
+    - ImageOverride -equals $(agent_image)
+
+resources:
+  repositories:
+    - repository: lake_devops
+      type: git
+      name: lake-devops/lake-devops
+      ref: refs/heads/main
+
+extends:
+  template: pipelines/templates/oeds-functionapp-deploy-v2-template.yaml@lake_devops
+  parameters:
+    source_folder: $(functionapp_source_folder)
+    environment: ${{ parameters.environment }}
+    node_version: ${{ parameters.node_version }}
+    service_connection: $(service_connection)
+    functionapp_name: $(functionapp_name)

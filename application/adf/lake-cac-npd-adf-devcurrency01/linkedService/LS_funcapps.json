@@ -1,0 +1,23 @@
+{
+	"name": "LS_funcapps",
+	"properties": {
+		"annotations": [],
+		"type": "AzureFunction",
+		"typeProperties": {
+			"functionAppUrl": "https://lake-cac-npd-func-devcurrency01.lake-cac-npd-ase-dev01.appserviceenvironment.net",
+			"functionKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_keyvault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "func-apps-key"
+			},
+			"authentication": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHost01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

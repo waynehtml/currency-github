@@ -1,0 +1,13 @@
+variables:
+  - name: dbx_dev_workspace_url
+    value: https://adb-1700301391505163.3.azuredatabricks.net
+  - name: dbx_dev_project_path
+    value: databricks_notebooks
+  - name: dbx_dev_destination_path
+    value: /currency
+  - name: dbx_dev_cluster_id
+    value: 0802-152904-vbe5wy6h
+  - name: dbx_dev_repo_notebook_location
+    value: application/databricks
+  - name: dbx_dev_delete_path
+    value: /currency

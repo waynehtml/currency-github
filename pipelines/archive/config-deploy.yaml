@@ -1,0 +1,75 @@
+trigger:
+  branches:
+    include:
+      - develop
+  paths:
+    include:
+      - lake-currency01/application/config/**
+
+resources:
+  repositories:
+    - repository: templates                     # Reference shared DevOps repo
+      type: git
+      name: lake-devops/lake-devops
+      ref: refs/heads/main
+
+pool:
+  name: dops-prdagntpl01
+
+variables:
+  sc_dev_lakecacnpdstdevland01: lake-dscn-bocqa01
+  sc_dev_lakecacnpdstdevland02: lake-dscn-bocqa01
+  sc_stg_lakecacprdststgland01: lake-dscn-stgbocad01
+  sc_stg_lakecacprdststgland02: lake-dscn-stgbocad01
+  sc_prd_lakecacprdstprdland01: lake-dscn-prdbocad01
+  sc_prd_lakecacprdstprdland02: lake-dscn-prdbocad01
+
+parameters:
+  - name: storage_target
+    displayName: Target Environment - Landing Zone
+    type: string
+    default: dev-lakecacnpdstdevland01
+    values:
+      - dev-lakecacnpdstdevland01
+      - dev-lakecacnpdstdevland02
+      - stg-lakecacprdststgland01
+      - stg-lakecacprdststgland02
+      - prd-lakecacprdstprdland01
+      - prd-lakecacprdstprdland02
+
+stages:
+  - stage: prepare_config
+    displayName: Prepare and Merge Config Files
+    jobs:
+      - job: prepare_and_merge_config
+        displayName: Prepare and Merge Config
+        steps:
+          - checkout: self
+          - checkout: templates
+          - script: |
+              mkdir -p $(Pipeline.Workspace)/merged_config
+              cp -r $(System.DefaultWorkingDirectory)/lake-currency01/application/config/shared/. $(Pipeline.Workspace)/merged_config/
+              cp -r $(System.DefaultWorkingDirectory)/lake-currency01/application/config/${{ split(parameters.storage_target, '-')[0] }}/. $(Pipeline.Workspace)/merged_config/
+            displayName: Merge shared and environment config
+          - publish: $(Pipeline.Workspace)/merged_config
+            artifact: config_archive
+            displayName: Publish merged config
+
+  - stage: sync_config_files
+    displayName: Sync Config Files to Datalake
+    dependsOn: prepare_config
+    jobs:
+      - job: publish_artifact
+        displayName: Publish Artifact (Template Dependency)
+        steps:
+          - script: echo "Template dependency job - artifact already published in previous stage"
+            displayName: Placeholder for publish_artifact
+      - template: pipelines/config/sync_datalake_folder.yaml@templates
+        parameters:
+          container: config-currency
+          source_folder: $(Pipeline.Workspace)/config_archive/
+          account_name: ${{ split(parameters.storage_target, '-')[1] }}
+          service_connection: $(sc_${{ replace(parameters.storage_target, '-', '_') }})
+          config_environment: ${{ split(parameters.storage_target, '-')[0] }}
+          pool:
+            name: dops-prdagntpl01

@@ -1,0 +1,36 @@
+{
+	"name": "trg_PL_Control_Main_ISA_ACDP",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Control_Main_ISA",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file": "ACDPTrace",
+					"delta": 1
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2024-11-21T18:58:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						32
+					],
+					"hours": [
+						1
+					]
+				}
+			}
+		}
+	}
+}

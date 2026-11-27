@@ -1,0 +1,151 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Response": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200
+        },
+        "runAfter": {
+          "For_each_-_project_object": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "For_each_-_project_object": {
+        "type": "Foreach",
+        "foreach": "@body('Parse_JSON_-_Config')?['projects']",
+        "actions": {
+          "Call_workflow_in_this_logic_app": {
+            "type": "Workflow",
+            "inputs": {
+              "host": {
+                "workflow": {
+                  "id": "alert_service_project"
+                }
+              },
+              "body": {
+                "project": "@outputs('Compose_-_project_root')"
+              }
+            },
+            "runAfter": {
+              "Compose_-_project_root": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Compose_-_project_root": {
+            "type": "Compose",
+            "inputs": "@items('For_each_-_project_object')['root']"
+          }
+        },
+        "runAfter": {
+          "Parse_JSON_-_Config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Read_blob_content_based_on_URI_-__Config": {
+        "type": "ServiceProvider",
+        "inputs": {
+          "parameters": {
+            "blobUri": "@variables('var_config')"
+          },
+          "serviceProviderConfiguration": {
+            "connectionName": "AzureBlob-land01",
+            "operationId": "readBlobFromUri",
+            "serviceProviderId": "/serviceProviders/AzureBlob"
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Compose_-_Config": {
+        "type": "Compose",
+        "inputs": "@body('Read_blob_content_based_on_URI_-__Config')?['content']",
+        "runAfter": {
+          "Read_blob_content_based_on_URI_-__Config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Parse_JSON_-_Config": {
+        "type": "ParseJson",
+        "inputs": {
+          "content": "@outputs('Compose_-_Config')",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "projects": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "root": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "root"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Compose_-_Config": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_config": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_config",
+              "type": "string",
+              "value": "@{if(empty(triggerBody()?['config']),concat(parameters('PARM_ALERT_SERVICE_ROOT_PATH'),'/',parameters('PARM_ALERT_PROJECT_CONFIG_FILE')),triggerBody()?['config'])}"
+            }
+          ]
+        },
+        "runAfter": {}
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "config": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "kind": "Stateful"
+}

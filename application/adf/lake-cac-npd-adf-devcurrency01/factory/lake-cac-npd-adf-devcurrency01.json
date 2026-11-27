@@ -1,0 +1,318 @@
+{
+	"name": "lake-cac-npd-adf-devcurrency01",
+	"properties": {
+		"globalParameters": {
+			"gpm_storage": {
+				"type": "string",
+				"value": "lakecacnpdstdev01"
+			},
+			"gpm_land_storage": {
+				"type": "string",
+				"value": "lakecacnpdstdevland01"
+			},
+			"gpm_av_host": {
+				"type": "string",
+				"value": "\\\\INQ9WLAKEAV01\\incoming\\"
+			},
+			"gpm_av_user": {
+				"type": "string",
+				"value": "bocqa\\lake_avscan_inqw_s"
+			},
+			"gpm_sftp_user": {
+				"type": "string",
+				"value": "dl_maoc_qa_s"
+			},
+			"gpm_sftp_host": {
+				"type": "string",
+				"value": "192.168.15.119"
+			},
+			"kv_scope": {
+				"type": "string",
+				"value": "lake-kv-currency-scope"
+			},
+			"spn_id_secret": {
+				"type": "string",
+				"value": "spn-currencyservices-id"
+			},
+			"spn_key_secret": {
+				"type": "string",
+				"value": "spn-currencyservices-key"
+			},
+			"tenant_id_secret": {
+				"type": "string",
+				"value": "lake-tenant-id"
+			},
+			"gpm_sftp_user_isa": {
+				"type": "string",
+				"value": "ccms_dl_dev_s"
+			},
+			"gpm_sftp_host_isa": {
+				"type": "string",
+				"value": "OPD4WCCMSCB01"
+			},
+			"gpm_land2_storage": {
+				"type": "string",
+				"value": "lakecacnpdstdevland02"
+			},
+			"gpm_env": {
+				"type": "string",
+				"value": "dev"
+			},
+			"gpm_sap_sftp_user": {
+				"type": "string",
+				"value": "ae_sap_sftp_s"
+			},
+			"gpm_sap_sftp_host": {
+				"type": "string",
+				"value": "OPS9LSAPEFT02"
+			},
+			"gpm_sap_sftp_user_password_kvkey": {
+				"type": "string",
+				"value": "sap-sftp-user-password"
+			},
+			"gpm_av_pass_key": {
+				"type": "string",
+				"value": "lake-avscan-password"
+			},
+			"gpm_sap_sftp_folder": {
+				"type": "string",
+				"value": "CUR-I-0108/outgoing"
+			},
+			"gpm_sap_av_path": {
+				"type": "string",
+				"value": "currency/sap/brs"
+			},
+			"gpm_sap_raw_path": {
+				"type": "string",
+				"value": "raw/internal/sap/brs"
+			},
+			"gpm_land_container": {
+				"type": "string",
+				"value": "land-currency"
+			},
+			"gpm_sap_land_path": {
+				"type": "string",
+				"value": "sap/brs"
+			},
+			"gpm_sap_container": {
+				"type": "string",
+				"value": "restricted"
+			},
+			"gpm_sync_storage": {
+				"type": "string",
+				"value": "lakecacnpdstdevsync01"
+			},
+			"gpm_cision_rdrive_user_name": {
+				"type": "string",
+				"value": "bocad\\crdp_dscurr_oppl_s"
+			},
+			"gpm_cision_rdrive_user_secret": {
+				"type": "string",
+				"value": "crdp-dscurr-oppl-s-pass"
+			},
+			"gpm_cision_media_av_path": {
+				"type": "string",
+				"value": "currency/cision/media"
+			},
+			"gpm_cision_media_rdrive_path": {
+				"type": "string",
+				"value": "\\\\svm1\\home\\asd\\datastg\\isdata\\csep\\ais\\isSource\\CSA\\LANDING"
+			},
+			"gpm_cision_media_land_path": {
+				"type": "string",
+				"value": "cision/media"
+			},
+			"gpm_cision_media_file": {
+				"type": "string",
+				"value": "Media_Report_{date}.xml"
+			},
+			"gpm_cision_media_lake_container": {
+				"type": "string",
+				"value": "restricted"
+			},
+			"gpm_cision_media_raw_path": {
+				"type": "string",
+				"value": "raw/external/cision/media"
+			},
+			"gpm_cbn_drive_path": {
+				"type": "string",
+				"value": "\\\\10.210.129.109\\sni_dc1_prd_data_vol01\\SNSFILES\\CBN"
+			},
+			"gpm_cbn_av_path": {
+				"type": "string",
+				"value": "currency/cbn"
+			},
+			"gpm_cbn_land_path": {
+				"type": "string",
+				"value": "cbn"
+			},
+			"gpm_cbn_path_map": {
+				"type": "object",
+				"value": {
+					"ssn": {
+						"folder": "ssn",
+						"filename": "*{date}*.XML",
+						"raw": "ssn"
+					},
+					"opp": {
+						"folder": "opp",
+						"filename": "*{date}*.XML",
+						"raw": "opp"
+					},
+					"dailyprocessing": {
+						"folder": "daily_processing",
+						"filename": "*{date}*.XML",
+						"raw": "dailyprocessing"
+					},
+					"bpsreport": {
+						"folder": "BPS_report",
+						"filename": "*{date}*.XML",
+						"raw": "bpsreport"
+					},
+					"productionstats": {
+						"folder": "Production_Statistics",
+						"filename": "*{date}*.XML",
+						"raw": "productionstats"
+					},
+					"zonecategorization": {
+						"folder": "Zone_Categorization",
+						"filename": "*{date}*.XML",
+						"raw": "zonecategorization"
+					},
+					"containeraoc": {
+						"folder": "container_AOC",
+						"filename": "*{date}*.XML",
+						"raw": "containeraoc"
+					},
+					"containerqa": {
+						"folder": "container_QA",
+						"filename": "*{date}*.XML",
+						"raw": "containerqa"
+					}
+				}
+			},
+			"gpm_cbn_container": {
+				"type": "string",
+				"value": "restricted"
+			},
+			"gpm_cbn_raw_path": {
+				"type": "string",
+				"value": "raw/external/cbn"
+			},
+			"gpm_key_vault_url": {
+				"type": "string",
+				"value": "https://lake-cac-npd-kv-devcur01.vault.azure.net/"
+			},
+			"gpm_cbn": {
+				"type": "object",
+				"value": {
+					"path": "\\\\10.210.129.140\\sni_dc1_prd_data_vol01\\SNSFILES\\CBN",
+					"file_pattern": ".XML",
+					"land_container": "land-currency",
+					"land_root": "cbn",
+					"raw_container": "restricted",
+					"raw_root": "raw/external/cbn",
+					"date_regex": "-(\\d{8})",
+					"date_iformat": "yyyyMMdd",
+					"date_oformat": "yyyy-MM-dd",
+					"ds": {
+						"ssn": {
+							"src_folder": "ssn",
+							"raw_folder": "ssn"
+						},
+						"opp": {
+							"src_folder": "opp",
+							"raw_folder": "opp"
+						},
+						"dailyprocessing": {
+							"src_folder": "daily_processing",
+							"raw_folder": "dailyprocessing"
+						},
+						"bpsreport": {
+							"src_folder": "BPS_report",
+							"raw_folder": "bpsreport"
+						},
+						"productionstats": {
+							"src_folder": "Production_Statistics",
+							"raw_folder": "productionstats"
+						},
+						"zonecategorization": {
+							"src_folder": "Zone_Categorization",
+							"raw_folder": "zonecategorization"
+						},
+						"containeraoc": {
+							"src_folder": "container_AOC",
+							"raw_folder": "containeraoc"
+						},
+						"containerqa": {
+							"src_folder": "container_QA",
+							"raw_folder": "containerqa"
+						}
+					}
+				}
+			},
+			"gpm_cbn_press": {
+				"type": "object",
+				"value": {
+					"drive_id": "b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8",
+					"path": "Reports-Ottawa/Datalake_Files/dev",
+					"file_pattern": ".xlsx",
+					"land_container": "land-currency",
+					"land_root": "cbn/press",
+					"raw_container": "restricted",
+					"raw_root": "raw/external/cbn/press",
+					"date_regex": "^(.{10})",
+					"date_iformat": "yyyy-MM-dd",
+					"date_oformat": "yyyy-MM-dd"
+				}
+			},
+			"gpm_qm_lab": {
+				"type": "object",
+				"value": {
+					"path": "\\\\10.146.37.30\\cur\\FUNCTION\\COMMON\\QM\\Functional Testing Data\\Batch Data Reports\\DataLake csv Files/dev",
+					"file_pattern": ".csv",
+					"land_container": "land-currency",
+					"land_root": "qm/lab",
+					"raw_container": "restricted",
+					"raw_root": "raw/internal/qm/lab",
+					"date_regex": "_(\\d{8})\\.csv$",
+					"date_iformat": "yyyyMMdd",
+					"date_oformat": "yyyy-MM-dd"
+				}
+			},
+			"gpm_test": {
+				"type": "object",
+				"value": "{\"name\":\"wei\"1}"
+			},
+			"gpm_nes_config": {
+				"type": "object",
+				"value": {
+					"sftp_host_dev": "OPD4WCCMSCB02",
+					"sftp_host_stg": "OPS4WCCMSCB01",
+					"sftp_host_prd": "OPP4WCCMSCB01",
+					"sftp_user_dev": "ccms_dl_dev_s",
+					"sftp_user_stg": "ccms_dl_stg_s",
+					"sftp_user_prd": "ccms_dl_pr_s",
+					"sftp_key": "ISA-pass",
+					"sftp_folder_dev": "/isaFx/ISA/OUT/DL/",
+					"sftp_folder_stg_prd": "/ISA/",
+					"sftp_archive_folder_dev": "/isaFx/ISA/OUT/DL/Archive/",
+					"sftp_archive_folder_stg_prd": "/ISA/Archive/",
+					"land_container": "land-currency",
+					"land_folder": "nes/",
+					"raw_container": "data",
+					"raw_folder": "raw/internal/nes/",
+					"setup_notebook_path": "/currency/nes/00_setup_NES",
+					"file_validation_notebook_path": "/currency/nes/01_file_validation_NES",
+					"standardization_notebook_path": "/currency/nes/02_raw_to_standardized_NES"
+				}
+			}
+		}
+	},
+	"location": "canadacentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "87ff59f6-0335-455c-a2e8-ff8891f51876",
+		"tenantId": "d5d43af4-5942-46a8-907b-711a17e948bd"
+	}
+}

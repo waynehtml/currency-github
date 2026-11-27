@@ -1,0 +1,123 @@
+{
+	"name": "PL_Transfer_Load",
+	"properties": {
+		"activities": [
+			{
+				"name": "Folder Copy",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/ISA/common/folder_copy",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"kv_scope": {
+							"value": "@pipeline().parameters.kv_scope",
+							"type": "Expression"
+						},
+						"spn_id_secret": {
+							"value": "@pipeline().parameters.spn_id_secret",
+							"type": "Expression"
+						},
+						"spn_key_secret": {
+							"value": "@pipeline().parameters.spn_key_secret",
+							"type": "Expression"
+						},
+						"tenant_id_secret": {
+							"value": "@pipeline().parameters.tenant_id_secret",
+							"type": "Expression"
+						},
+						"input_folder": {
+							"value": "@pipeline().parameters.input_folder",
+							"type": "Expression"
+						},
+						"output_folder": {
+							"value": "@pipeline().parameters.output_folder",
+							"type": "Expression"
+						},
+						"src_file": {
+							"value": "@pipeline().parameters.src_file",
+							"type": "Expression"
+						},
+						"out_file": {
+							"value": "@pipeline().parameters.out_file",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"tenant_id_secret": {
+				"type": "string",
+				"defaultValue": "lake-tenant-id"
+			},
+			"spn_key_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-key"
+			},
+			"spn_id_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-id"
+			},
+			"kv_scope": {
+				"type": "string",
+				"defaultValue": "lake-kv-currency-scope"
+			},
+			"input_folder": {
+				"type": "string",
+				"defaultValue": "maocreissnotes"
+			},
+			"output_folder": {
+				"type": "string",
+				"defaultValue": "extractreissnotes"
+			},
+			"src_file": {
+				"type": "string",
+				"defaultValue": "MAOCReissNotes"
+			},
+			"out_file": {
+				"type": "string",
+				"defaultValue": "ExtractReissNotes"
+			}
+		},
+		"variables": {
+			"notebook_return": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,25 @@
+{
+	"name": "DS_Binary_SPO",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_HTTP_SPO",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"relative_path": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@dataset().relative_path",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

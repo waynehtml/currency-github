@@ -1,0 +1,61 @@
+{
+  "datasets": [
+    {
+      "name": "violation_count",
+      "displayName": "Example violations",
+      "query": "SELECT 0 AS violation_count"
+    }
+  ],
+  "pages": [
+    {
+      "name": "main",
+      "displayName": "Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "violation_count_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "violation_count",
+                  "fields": [
+                    {
+                      "name": "violation_count",
+                      "expression": "`violation_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "violation_count",
+                    "displayName": "Violation count"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Example violations",
+                "showDescription": true,
+                "description": "Placeholder data; replace the query before using this dashboard for reporting."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 4
+          }
+        }
+      ]
+    }
+  ]
+}

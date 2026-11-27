@@ -1,0 +1,521 @@
+{
+	"name": "PL_Land_to_Raw_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "If BN or Shift",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.file,'bn')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Shift Land to Raw - Site",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "m7/shift/balance/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('m7/shift/balance/', pipeline().parameters.date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/shift/balance/', pipeline().parameters.date,'/',pipeline().parameters.site)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "HC Land to Raw",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Shift Land to Raw - All Sites",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "m7/shift/hc/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "m7/shift/hc/",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/shift/hc/', pipeline().parameters.date,'/',pipeline().parameters.site)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Shift Land to Raw - All Sites",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Shift Land to Raw - Site",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "m7/shift/balance/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('m7/shift/balance/', pipeline().parameters.date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/shift/balance/', pipeline().parameters.date,'/all_sites')",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "HC Land to Raw - All sites",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "HC Land to Raw",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": "m7/shift/hc/",
+										"wildcardFileName": "*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "m7/shift/hc/",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/shift/hc/', pipeline().parameters.date,'/all_sites')",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "BN Land to Raw - Site",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "m7/bn/",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/bn/unconverted/', pipeline().parameters.date,'/',pipeline().parameters.site)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "BN Land to Raw_copy_all_sites",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "BN Land to Raw - Site",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "m7/bn/",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('raw/internal/aoc_processing/m7/bn/unconverted/', pipeline().parameters.date,'/all_sites')",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			},
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

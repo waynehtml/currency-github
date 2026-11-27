@@ -1,0 +1,13 @@
+{
+	"name": "IR-SelfHost01",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Self-hosted integration runtime for all Lake ADFs",
+		"typeProperties": {
+			"linkedInfo": {
+				"resourceId": "/subscriptions/1de5fd2d-2313-461a-acc4-07cdc509cdf4/resourcegroups/lake-cac-npd-rg-devplatform/providers/Microsoft.DataFactory/factories/lake-cac-npd-adf-devplatform01/integrationruntimes/IR-SelfHost01",
+				"authorizationType": "Rbac"
+			}
+		}
+	}
+}

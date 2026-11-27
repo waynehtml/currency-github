@@ -1,0 +1,10 @@
+# Minimal authoring example; replace the dashboard JSON for project-specific reporting.
+resources:
+  dashboards:
+    DASHBOARD_MAIN:
+      display_name: ${var.project.domain}-${var.project.dataset}-DASHBOARD
+      file_path: ../../dashboards/main.lvdash.json
+      dataset_catalog: ${var.catalog}
+      warehouse_id: ${var.dashboard_warehouse_id}
+      permissions: ${var.dashboard_permissions}
+      embed_credentials: false

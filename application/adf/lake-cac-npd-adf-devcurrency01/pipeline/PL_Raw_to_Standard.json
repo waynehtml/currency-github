@@ -1,0 +1,73 @@
+{
+	"name": "PL_Raw_to_Standard",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach  - Folder",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.file_dates",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "raw_to_standardized",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@pipeline().parameters.notebook",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"file_date": {
+										"value": "@item()",
+										"type": "Expression"
+									},
+									"file_type": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"notebook": {
+				"type": "string"
+			},
+			"file_dates": {
+				"type": "array",
+				"defaultValue": [
+					"2025-06-30"
+				]
+			},
+			"file_type": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,140 @@
+{
+	"name": "PL_Control_Main_RCMP_Multiple",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach - folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "If Condition - folders provided",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('var_folders')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "PL_Standardized_to_Curation",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Control_Main_RCMP",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"folder": {
+										"value": "@item()",
+										"type": "Expression"
+									},
+									"skip_Land_to_Raw": {
+										"value": "@pipeline().parameters.skip_Land_to_Raw",
+										"type": "Expression"
+									},
+									"skip_Raw_to_Standard": {
+										"value": "@pipeline().parameters.skip_Raw_to_Standard",
+										"type": "Expression"
+									},
+									"skip_Standard_to_Curation": {
+										"value": "@pipeline().parameters.skip_Standard_to_Curation",
+										"type": "Expression"
+									},
+									"load_type": {
+										"value": "@pipeline().parameters.load_type",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Condition - folders provided",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(equals(pipeline().parameters.folders,''))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail - empty folders",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "The parameter folders is required. e.g. 2025-JAN,2025-FEB,2025-MAR,2025-APR,2025-MAY,2025-JUN,2025-JUL,2025-AUG,2025-SEP,2025-OCT,2025-NOV,2025-DEC",
+								"errorCode": "400"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Set variable - folders",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_folders",
+								"value": {
+									"value": "@split(pipeline().parameters.folders,',')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"folders": {
+				"type": "string"
+			},
+			"skip_Land_to_Raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Raw_to_Standard": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Standard_to_Curation": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"load_type": {
+				"type": "string",
+				"defaultValue": "incremental"
+			}
+		},
+		"variables": {
+			"var_folders": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "RCMP/Control"
+		},
+		"annotations": []
+	}
+}

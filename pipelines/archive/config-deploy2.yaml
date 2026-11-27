@@ -1,0 +1,87 @@
+trigger: none
+
+parameters:
+  - name: storage_target
+    displayName: Target Environment - Landing Zone
+    type: string
+    default: dev-lakecacnpdstdevland01
+    values:
+      - dev-lakecacnpdstdevland01
+      - dev-lakecacnpdstdevland02
+      - stg-lakecacprdststgland01
+      - stg-lakecacprdststgland02
+      - prd-lakecacprdstprdland01
+      - prd-lakecacprdstprdland02
+
+variables:
+  # Map storage_target to service connection names
+  sc_dev_lakecacnpdstdevland01: lake-dscn-bocqa01
+  sc_dev_lakecacnpdstdevland02: lake-dscn-bocqa01
+  sc_stg_lakecacprdststgland01: lake-dscn-stgbocad01
+  sc_stg_lakecacprdststgland02: lake-dscn-stgbocad01
+  sc_prd_lakecacprdstprdland01: lake-dscn-prdbocad01
+  sc_prd_lakecacprdstprdland02: lake-dscn-prdbocad01
+
+pool:
+  name: dops-prdagntpl01
+
+stages:
+
+- stage: PrepareAndMerge
+  displayName: 'Prepare and Merge Config Files'
+  jobs:
+  - job: PrepareMerge
+    displayName: 'Merge shared and env config'
+    steps:
+    - checkout: self
+    - script: |
+        echo "Merging shared and environment config folders..."
+
+        MERGED_DIR=$(Pipeline.Workspace)/merged_config
+        mkdir -p "$MERGED_DIR"
+
+        SHARED_DIR=$(System.DefaultWorkingDirectory)/application/config/shared
+        ENV_FOLDER=${{ split(parameters.storage_target, '-')[0] }}
+        ENV_DIR=$(System.DefaultWorkingDirectory)/application/config/${ENV_FOLDER}
+
+        echo "Copying shared files first..."
+        cp -r "$SHARED_DIR/." "$MERGED_DIR/"
+
+        echo "Copying environment ($ENV_FOLDER) files to overwrite shared files..."
+        cp -r "$ENV_DIR/." "$MERGED_DIR/"
+
+        echo "Contents merged in $MERGED_DIR"
+      displayName: 'Merge shared and environment config'
+
+    - publish: $(Pipeline.Workspace)/merged_config
+      artifact: config_archive
+      displayName: 'Publish merged config artifact'
+
+- stage: UploadToBlob
+  displayName: 'Upload merged config to Blob Storage'
+  dependsOn: PrepareAndMerge
+  jobs:
+  - job: Upload
+    displayName: 'Upload merged config to target blob container'
+    steps:
+    - download: current
+      artifact: config_archive
+
+    - task: AzureCLI@2
+      displayName: 'Upload merged config to Blob'
+      inputs:
+        azureSubscription: ${{ variables[format('sc_{0}', replace(parameters.storage_target, '-', '_'))] }}
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Starting upload of merged config files to blob container config-currency..."
+          UPLOAD_PATH=$(Pipeline.Workspace)/config_archive
+
+          az storage blob upload-batch \
+            --account-name ${{ split(parameters.storage_target, '-')[1] }} \
+            --destination config-currency/ \
+            --source "$UPLOAD_PATH" \
+            --auth-mode login \
+            --overwrite
+
+          echo "Upload complete."

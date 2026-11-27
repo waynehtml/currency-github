@@ -1,0 +1,181 @@
+{
+	"name": "PL_Multiple_Sources_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "lkp_M7_data_sources",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_m7_data_sources",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": "config-currency",
+							"pm_folder": "m7",
+							"pm_filename": "data_sources.json"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach M7 Data Source",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "lkp_M7_data_sources",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lkp_M7_data_sources').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "PL_Control_Main_M7",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Control_Main_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"delta": {
+										"value": "@pipeline().parameters.delta",
+										"type": "Expression"
+									},
+									"skip_Sftp_to_Av": {
+										"value": "@pipeline().parameters.skip_Sftp_to_Av",
+										"type": "Expression"
+									},
+									"skip_Av_to_Land": {
+										"value": "@pipeline().parameters.skip_Av_to_Land",
+										"type": "Expression"
+									},
+									"skip_Land_to_Raw": {
+										"value": "@pipeline().parameters.skip_Land_to_Raw",
+										"type": "Expression"
+									},
+									"skip_Bn_Converter": {
+										"value": "@pipeline().parameters.skip_Bn_Converter",
+										"type": "Expression"
+									},
+									"skip_Raw_to_Standard": {
+										"value": "@pipeline().parameters.skip_Raw_to_Standard",
+										"type": "Expression"
+									},
+									"skip_Archive_Files": {
+										"value": "@pipeline().parameters.skip_Archive_Files",
+										"type": "Expression"
+									},
+									"hostname": {
+										"value": "@item().sources.hostname",
+										"type": "Expression"
+									},
+									"username": {
+										"value": "@item().sources.username",
+										"type": "Expression"
+									},
+									"key": {
+										"value": "@item().sources.key",
+										"type": "Expression"
+									},
+									"folder": {
+										"value": "@item().sources.folder",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@item().sources.site",
+										"type": "Expression"
+									},
+									"mode": {
+										"value": "@pipeline().parameters.mode",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string",
+				"defaultValue": "bn"
+			},
+			"delta": {
+				"type": "int",
+				"defaultValue": 11
+			},
+			"skip_Sftp_to_Av": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Av_to_Land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Land_to_Raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Bn_Converter": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Raw_to_Standard": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Archive_Files": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "append"
+			}
+		},
+		"folder": {
+			"name": "M7/Control"
+		},
+		"annotations": []
+	}
+}

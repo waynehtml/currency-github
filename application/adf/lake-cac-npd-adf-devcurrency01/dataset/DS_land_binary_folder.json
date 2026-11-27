@@ -1,0 +1,32 @@
+{
+	"name": "DS_land_binary_folder",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_landingzone",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"pm_container": {
+				"type": "string"
+			},
+			"pm_folder": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().pm_folder",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().pm_container",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

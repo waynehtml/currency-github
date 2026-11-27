@@ -1,0 +1,248 @@
+{
+	"name": "PL_Get_Diff_Dates",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get files - CBN root",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_FS_rdrive_binary_file",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": "svm1",
+							"file_path": {
+								"value": "@pipeline().globalParameters.gpm_cbn_drive_path",
+								"type": "Expression"
+							},
+							"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+							"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+							"filename": {
+								"value": "*",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Set filenames",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Year folder",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_file_names",
+					"value": {
+						"value": "@join(variables('var_file_list'),'|')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Year folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get files - CBN root",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get files - CBN root').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get files - XML files",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_FS_rdrive_binary_file",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": "svm1",
+										"file_path": {
+											"value": "@concat(pipeline().globalParameters.gpm_cbn_drive_path,'\\',item().name,'\\',pipeline().globalParameters.gpm_cbn_path_map[pipeline().parameters.file_type]['folder'])",
+											"type": "Expression"
+										},
+										"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+										"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+										"filename": {
+											"value": "*",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Append variable1",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Get files - XML files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_file_list",
+								"value": {
+									"value": "@string(activity('Get files - XML files').output.childItems)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "get_diff_dates",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Set filenames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/cbn/get_diff_dates",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"file_type": {
+							"value": "@pipeline().parameters.file_type",
+							"type": "Expression"
+						},
+						"file_names": {
+							"value": "@variables('var_file_names')",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set return dates",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "get_diff_dates",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "dates",
+							"value": {
+								"type": "Expression",
+								"content": "@activity('get_diff_dates').output.runOutput"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			}
+		},
+		"variables": {
+			"var_file_list": {
+				"type": "Array"
+			},
+			"var_file_names": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "CBN/archive/CBN/Dynamic"
+		},
+		"annotations": []
+	}
+}

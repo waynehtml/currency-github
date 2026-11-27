@@ -1,0 +1,232 @@
+{
+	"name": "PL_Land_to_Standardized_BRS",
+	"properties": {
+		"activities": [
+			{
+				"name": "If skip_land_to_raw",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_land_to_raw,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Copy file Land to Raw",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": false,
+										"wildcardFolderPath": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_land_path,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_land_path,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_sap_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_raw_path,'/',pipeline().parameters.brs_filetype,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "If skip_raw_to_standard",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If skip_land_to_raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_raw_to_standard,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Raw to Standardized",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Data Validation",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/currency/sap/brs/common/raw_to_standardized",
+								"baseParameters": {
+									"storage": {
+										"value": "@pipeline().globalParameters.gpm_storage",
+										"type": "Expression"
+									},
+									"brs_filetype": {
+										"value": "@pipeline().parameters.brs_filetype",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().globalParameters.gpm_env",
+										"type": "Expression"
+									},
+									"file_date": {
+										"value": "@pipeline().parameters.file_date",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Data Validation",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/currency/sap/brs/common/data_validation",
+								"baseParameters": {
+									"brs_filetype": {
+										"value": "@pipeline().parameters.brs_filetype",
+										"type": "Expression"
+									},
+									"storage": {
+										"value": "@pipeline().globalParameters.gpm_storage",
+										"type": "Expression"
+									},
+									"file_date": {
+										"value": "@pipeline().parameters.file_date",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().globalParameters.gpm_env",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"brs_filetype": {
+				"type": "string",
+				"defaultValue": "qm11"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"file_date": {
+				"type": "String"
+			},
+			"file_name": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "SAP/Control/Dynamic"
+		},
+		"annotations": []
+	}
+}

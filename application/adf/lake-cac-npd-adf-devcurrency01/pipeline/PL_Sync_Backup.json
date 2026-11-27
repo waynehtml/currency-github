@@ -1,0 +1,239 @@
+{
+	"name": "PL_Sync_Backup",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set lake_path",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_lake_path",
+					"value": {
+						"value": "@if(or(equals(pipeline().parameters.param_lake_pattern,null),empty(pipeline().parameters.param_lake_pattern)),pipeline().parameters.param_lake_directory, concat(pipeline().parameters.param_lake_directory,'/',pipeline().parameters.param_lake_pattern))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Copy to Pod",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "If delete2",
+						"dependencyConditions": [
+							"Completed"
+						]
+					},
+					{
+						"activity": "Set lake_path",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": {
+								"value": "@variables('var_lake_path')",
+								"type": "Expression"
+							},
+							"deleteFilesAfterCompletion": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_lake",
+						"type": "DatasetReference",
+						"parameters": {
+							"directory": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_pod",
+						"type": "DatasetReference",
+						"parameters": {
+							"directory": {
+								"value": "@pipeline().parameters.param_pod_path",
+								"type": "Expression"
+							},
+							"storage_account": {
+								"value": "@pipeline().parameters.param_pod_storage",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "If delete2",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If delete1",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(equals(pipeline().parameters.param_delete_or_overwrite,1),equals(length(activity('Check if box exists').output.childItems), 0))",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Delete box in Pod",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_pod",
+									"type": "DatasetReference",
+									"parameters": {
+										"directory": {
+											"value": "@pipeline().parameters.param_pod_path",
+											"type": "Expression"
+										},
+										"storage_account": {
+											"value": "@pipeline().parameters.param_pod_storage",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If delete1",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.param_delete_or_overwrite,1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Check if box exists",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_pod",
+									"type": "DatasetReference",
+									"parameters": {
+										"directory": {
+											"value": "@pipeline().parameters.param_pod_path",
+											"type": "Expression"
+										},
+										"storage_account": {
+											"value": "@pipeline().parameters.param_pod_storage",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"param_lake_directory": {
+				"type": "string"
+			},
+			"param_lake_pattern": {
+				"type": "string"
+			},
+			"param_pod_path": {
+				"type": "string"
+			},
+			"param_pod_storage": {
+				"type": "string"
+			},
+			"param_delete_or_overwrite": {
+				"type": "int",
+				"defaultValue": 1
+			}
+		},
+		"variables": {
+			"var_lake_path": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/sync"
+		},
+		"annotations": []
+	}
+}

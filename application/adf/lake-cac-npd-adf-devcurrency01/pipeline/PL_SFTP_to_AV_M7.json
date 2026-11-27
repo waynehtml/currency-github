@@ -1,0 +1,327 @@
+{
+	"name": "PL_SFTP_to_AV_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "If BN or Shift",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.file,'bn')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Shift - SFTP to AV",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "SftpReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@concat('???????_', replace(pipeline().parameters.date, '-', ''),'_??????_ShiftBalance.xml')",
+											"type": "Expression"
+										},
+										"deleteFilesAfterCompletion": false,
+										"disableChunking": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "FileServerWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_sftp_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_hostname": {
+											"value": "@pipeline().parameters.hostname",
+											"type": "Expression"
+										},
+										"pm_username": {
+											"value": "@pipeline().parameters.username",
+											"type": "Expression"
+										},
+										"pm_keyname": {
+											"value": "@pipeline().parameters.key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@pipeline().parameters.folder",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/shift/balance/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "HC - SFTP to AV",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Shift - SFTP to AV",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "SftpReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@concat('???????_', replace(pipeline().parameters.date, '-', ''),'_??????_HC_??.xml')",
+											"type": "Expression"
+										},
+										"deleteFilesAfterCompletion": false,
+										"disableChunking": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "FileServerWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_sftp_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_hostname": {
+											"value": "@pipeline().parameters.hostname",
+											"type": "Expression"
+										},
+										"pm_username": {
+											"value": "@pipeline().parameters.username",
+											"type": "Expression"
+										},
+										"pm_keyname": {
+											"value": "@pipeline().parameters.key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@pipeline().parameters.folder",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/shift/hc/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "BN - SFTP to AV",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "SftpReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@concat('BNList2_???????_', replace(pipeline().parameters.date, '-', ''),'*')",
+											"type": "Expression"
+										},
+										"deleteFilesAfterCompletion": false,
+										"disableChunking": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "FileServerWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_sftp_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_hostname": {
+											"value": "@pipeline().parameters.hostname",
+											"type": "Expression"
+										},
+										"pm_username": {
+											"value": "@pipeline().parameters.username",
+											"type": "Expression"
+										},
+										"pm_keyname": {
+											"value": "@pipeline().parameters.key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@pipeline().parameters.folder",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "lake-avscan-password",
+											"type": "Expression"
+										},
+										"pm_folder": "currency/bn/",
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			},
+			"hostname": {
+				"type": "string"
+			},
+			"username": {
+				"type": "string"
+			},
+			"key": {
+				"type": "string"
+			},
+			"folder": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

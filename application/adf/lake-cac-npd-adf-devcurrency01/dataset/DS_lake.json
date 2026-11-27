@@ -1,0 +1,25 @@
+{
+	"name": "DS_lake",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_lakest",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"directory": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileSystem": {
+					"value": "@dataset().directory",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

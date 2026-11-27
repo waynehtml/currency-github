@@ -1,0 +1,301 @@
+{
+	"name": "PL_CBN_Control_Main",
+	"properties": {
+		"description": "file_type: ssn, opp, dailyprocessing, bpsreport, productionstats, zonecategorization, containeraoc, containerqa",
+		"activities": [
+			{
+				"name": "Set ds_map",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_ds_map",
+					"value": {
+						"value": "@string(pipeline().globalParameters.gpm_cbn)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get sub folders",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set ds_map",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_FS_rdrive_binary_file",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": "svm1",
+							"file_path": {
+								"value": "@json(variables('var_ds_map'))['path']",
+								"type": "Expression"
+							},
+							"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+							"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+							"filename": {
+								"value": "*",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Sub folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter sub folders').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Merge return Dates into tmp_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_CBN_Process_SubFolder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_tmp_dates",
+								"value": {
+									"value": "@union(activity('PL_CBN_Process_SubFolder').output.pipelineReturnValue.dates, variables('var_dates'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy tmp to var_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Merge return Dates into tmp_dates",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@variables('var_tmp_dates')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PL_CBN_Process_SubFolder",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_CBN_Process_SubFolder",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file_type": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									},
+									"file_date": {
+										"value": "@pipeline().parameters.file_date",
+										"type": "Expression"
+									},
+									"skip_source_to_land": {
+										"value": "@pipeline().parameters.skip_source_to_land",
+										"type": "Expression"
+									},
+									"skip_land_to_raw": {
+										"value": "@pipeline().parameters.skip_land_to_raw",
+										"type": "Expression"
+									},
+									"skip_raw_to_standard": {
+										"value": "@pipeline().parameters.skip_raw_to_standard",
+										"type": "Expression"
+									},
+									"folder": {
+										"value": "@item().name",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter sub folders",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get sub folders').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(\r\n    equals(item().type, 'Folder'),\r\n    greater(add(int(item().name), pipeline().parameters.search_year_range), int(formatDateTime(utcNow(), 'yyyy')))\r\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If dates empty",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Sub folder",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@empty(variables('var_dates'))",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PL_Log_Notification - no date",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_type": {
+				"type": "string",
+				"defaultValue": "ssn"
+			},
+			"file_date": {
+				"type": "string"
+			},
+			"search_year_range": {
+				"type": "int",
+				"defaultValue": 2
+			},
+			"skip_source_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"var_dates": {
+				"type": "Array"
+			},
+			"var_tmp_dates": {
+				"type": "Array"
+			},
+			"var_ds_map": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "CBN"
+		},
+		"annotations": []
+	}
+}

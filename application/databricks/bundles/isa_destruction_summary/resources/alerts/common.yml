@@ -1,0 +1,254 @@
+variables:
+  # Shared alert access retains job permission audiences except domain app SPNs.
+  # All mapped service accounts administer alerts with CAN_MANAGE in every target.
+  # App SPNs are excluded because apps do not need access to SQL alerts.
+  # Alert execution uses runas_service_account, configured in each alert resource.
+  # Resolve by confirmed project.domain, then target; preserve every entry and level.
+  # mapping:
+  #   FMD:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     - group_name: lake_tritonsupport_rusr_inpa
+  #       level: CAN_READ
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     - group_name: lake_tritonsupport_rusr_inpa
+  #       level: CAN_READ
+  #   CUR:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #   BAP:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #   SUP:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #   OEDS:
+  #     dev:
+  #     - group_name: lake_aeengsupport_rusr_inda
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 2b501945-5940-4527-9cdd-51a07b77ceb7
+  #       level: CAN_MANAGE
+  #     stg:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 118bb443-4441-422d-b9b4-14cdc5ede028
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  #     prd:
+  #     - group_name: lake_aeengsupport_rusr_inpa
+  #       level: CAN_MANAGE
+  #     - service_principal_name: 9a4da41a-bd6d-4773-99ce-2ba8b78f4d65
+  #       level: CAN_MANAGE
+  #     - group_name: lake_dmengineer_rusr_inpa
+  #       level: CAN_RUN
+  alert_permissions:
+    description: Environment-specific permissions shared by all SQL alerts.
+    type: complex
+  alert_warehouse_id:
+    description: SQL warehouse used by alerts unless overridden on an alert resource.
+    default: ${var.sql_warehouse_serverless_small_id}
+  # SQL alert recipients configured independently for each domain and target.
+  # This mapping is owned by alerts and does not depend on Job Setup or job emails.
+  # Verify recipient eligibility in the workspace; non-user addresses need destinations.
+  # mapping:
+  #   FMD:
+  #     dev:
+  #     - user_email: dda-support-dev@bank-banque-canada.ca
+  #     stg:
+  #     - user_email: dda-support-stg@bank-banque-canada.ca
+  #     - user_email: triton-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-STG@bank-banque-canada.ca
+  #     prd:
+  #     - user_email: dda-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-PRD@bank-banque-canada.ca
+  #     - user_email: triton-support@bank-banque-canada.ca
+  #   CUR:
+  #     dev:
+  #     - user_email: dda-support-dev@bank-banque-canada.ca
+  #     stg:
+  #     - user_email: dda-support-stg@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-STG@bank-banque-canada.ca
+  #     prd:
+  #     - user_email: dda-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-PRD@bank-banque-canada.ca
+  #   BAP:
+  #     dev:
+  #     - user_email: dda-support-dev@bank-banque-canada.ca
+  #     stg:
+  #     - user_email: dda-support-stg@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-STG@bank-banque-canada.ca
+  #     prd:
+  #     - user_email: dda-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-PRD@bank-banque-canada.ca
+  #   SUP:
+  #     dev:
+  #     - user_email: dda-support-dev@bank-banque-canada.ca
+  #     stg:
+  #     - user_email: dda-support-stg@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-STG@bank-banque-canada.ca
+  #     prd:
+  #     - user_email: dda-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-PRD@bank-banque-canada.ca
+  #   OEDS:
+  #     dev:
+  #     - user_email: dda-support-dev@bank-banque-canada.ca
+  #     stg:
+  #     - user_email: dda-support-stg@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-STG@bank-banque-canada.ca
+  #     prd:
+  #     - user_email: dda-support@bank-banque-canada.ca
+  #     - user_email: DataLakeMonitoring-PRD@bank-banque-canada.ca
+  alert_subscriptions:
+    description: Independent domain/target SQL alert subscriptions.
+    type: complex
+
+targets:
+  dev:
+    variables:
+      # name: dev_alert_permissions
+      # description: Mapped dev permissions for SQL alerts.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then dev.
+      #     Preserve the mapped YAML type.
+      alert_permissions:
+        - group_name: "lake_aeengsupport_rusr_inda"
+          level: "CAN_MANAGE"
+        - service_principal_name: "2b501945-5940-4527-9cdd-51a07b77ceb7"
+          level: "CAN_MANAGE"
+      # name: dev_alert_subscriptions
+      # description: Mapped dev SQL alert recipients from the independent subscription mapping.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_subscriptions in this file,
+      #     selecting confirmed project.domain case-insensitively, then dev.
+      #     Preserve the list of user_email objects.
+      alert_subscriptions:
+        - user_email: "dda-support-dev@bank-banque-canada.ca"
+  stg:
+    variables:
+      # name: stg_alert_permissions
+      # description: Mapped stg permissions for SQL alerts.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then stg.
+      #     Preserve the mapped YAML type.
+      alert_permissions:
+        - group_name: "lake_aeengsupport_rusr_inpa"
+          level: "CAN_MANAGE"
+        - service_principal_name: "118bb443-4441-422d-b9b4-14cdc5ede028"
+          level: "CAN_MANAGE"
+        - group_name: "lake_dmengineer_rusr_inpa"
+          level: "CAN_RUN"
+      # name: stg_alert_subscriptions
+      # description: Mapped stg SQL alert recipients from the independent subscription mapping.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_subscriptions in this file,
+      #     selecting confirmed project.domain case-insensitively, then stg.
+      #     Preserve the list of user_email objects.
+      alert_subscriptions:
+        - user_email: "dda-support-stg@bank-banque-canada.ca"
+        - user_email: "DataLakeMonitoring-STG@bank-banque-canada.ca"
+  prd:
+    variables:
+      # name: prd_alert_permissions
+      # description: Mapped prd permissions for SQL alerts.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_permissions in this file,
+      #     selecting confirmed project.domain case-insensitively, then prd.
+      #     Preserve the mapped YAML type.
+      alert_permissions:
+        - group_name: "lake_aeengsupport_rusr_inpa"
+          level: "CAN_MANAGE"
+        - service_principal_name: "9a4da41a-bd6d-4773-99ce-2ba8b78f4d65"
+          level: "CAN_MANAGE"
+        - group_name: "lake_dmengineer_rusr_inpa"
+          level: "CAN_RUN"
+      # name: prd_alert_subscriptions
+      # description: Mapped prd SQL alert recipients from the independent subscription mapping.
+      # required: true
+      # value:
+      #   modes: ["infer"]
+      #   infer: From the mapping beside variables.alert_subscriptions in this file,
+      #     selecting confirmed project.domain case-insensitively, then prd.
+      #     Preserve the list of user_email objects.
+      alert_subscriptions:
+        - user_email: "dda-support@bank-banque-canada.ca"
+        - user_email: "DataLakeMonitoring-PRD@bank-banque-canada.ca"

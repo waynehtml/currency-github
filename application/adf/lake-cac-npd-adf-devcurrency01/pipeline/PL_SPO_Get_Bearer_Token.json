@@ -1,0 +1,327 @@
+{
+	"name": "PL_SPO_Get_Bearer_Token",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Tenant ID",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set Tenant ID Name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().globalParameters.gpm_key_vault_url, replace('secrets/{key_value}/?api-version=7.0', '{key_value}', variables('var_tenant_id_name')))",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "@string('https://vault.azure.net')"
+					}
+				}
+			},
+			{
+				"name": "Get SPN ID",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set SPN ID Name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().globalParameters.gpm_key_vault_url, replace('secrets/{key_value}/?api-version=7.0', '{key_value}', variables('var_spn_id_name')))",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "@string('https://vault.azure.net')"
+					}
+				}
+			},
+			{
+				"name": "Get SPN Secret",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set SPN Secret Name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().globalParameters.gpm_key_vault_url, replace('secrets/{key_value}/?api-version=7.0', '{key_value}', variables('var_spn_secret_name')))",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "@string('https://vault.azure.net')"
+					}
+				}
+			},
+			{
+				"name": "Set Tenant ID",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get Tenant ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_tenant_id",
+					"value": {
+						"value": "@activity('Get Tenant ID').output.value",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set SPN ID",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get SPN ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_spn_id",
+					"value": {
+						"value": "@activity('Get SPN ID').output.value",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Tenant Secret",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get SPN Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_spn_secret",
+					"value": {
+						"value": "@activity('Get SPN Secret').output.value",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get SharePoint Bearer Token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set Tenant ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set SPN ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set Tenant Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded",
+						"User-Agent": "MySharePointApp/1.0"
+					},
+					"url": {
+						"value": "@replace('https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token', '{tenant_id}', variables('var_tenant_id'))",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@replace(replace('grant_type=client_credentials&client_id={sharePoint_client_id}&client_secret={client_secret}&scope=https://graph.microsoft.com/.default', '{sharePoint_client_id}', variables('var_spn_id')), '{client_secret}', variables('var_spn_secret'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set SPN ID Name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_spn_id_name",
+					"value": {
+						"value": "@if(contains(pipeline().DataFactory, 'dev' ),\r\n     'spn-currencyservices-id-stg',\r\n     'spn-currencyservices-id')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set SPN Secret Name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_spn_secret_name",
+					"value": {
+						"value": "@if(contains(pipeline().DataFactory, 'dev' ),\n     'spn-currencyservices-key-stg',\n     'spn-currencyservices-key')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Tenant ID Name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_tenant_id_name",
+					"value": {
+						"value": "@if(contains(pipeline().DataFactory, 'dev' ),\n     'lake-tenant-id-stg',\n     'lake-tenant-id')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set return values",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get SharePoint Bearer Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "token",
+							"value": {
+								"type": "Expression",
+								"content": "@activity('Get SharePoint Bearer Token').output.access_token"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"variables": {
+			"var_tenant_id": {
+				"type": "String"
+			},
+			"var_spn_id": {
+				"type": "String"
+			},
+			"var_spn_secret": {
+				"type": "String"
+			},
+			"var_token": {
+				"type": "String"
+			},
+			"var_spn_id_name": {
+				"type": "String"
+			},
+			"var_spn_secret_name": {
+				"type": "String"
+			},
+			"var_tenant_id_name": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/SPO"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,208 @@
+{
+	"name": "PL_Sync_Restore",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy to lake",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "ForEach",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_pod",
+						"type": "DatasetReference",
+						"parameters": {
+							"directory": {
+								"value": "@pipeline().parameters.param_pod_path",
+								"type": "Expression"
+							},
+							"storage_account": {
+								"value": "@pipeline().parameters.param_pod_storage",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_lake",
+						"type": "DatasetReference",
+						"parameters": {
+							"directory": {
+								"value": "@pipeline().parameters.param_lake_directory",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "ForEach",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "If delete",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@if(equals(pipeline().parameters.param_delete_or_overwrite,0), json('[]'), activity('Get files in box').output.childItems)",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "Delete folders in lake",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_lake",
+									"type": "DatasetReference",
+									"parameters": {
+										"directory": {
+											"value": "@concat(pipeline().parameters.param_lake_directory,'/',item().name)",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If delete",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.param_delete_or_overwrite,1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Get files in box",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_pod",
+									"type": "DatasetReference",
+									"parameters": {
+										"directory": {
+											"value": "@pipeline().parameters.param_pod_path",
+											"type": "Expression"
+										},
+										"storage_account": {
+											"value": "@pipeline().parameters.param_pod_storage",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"param_lake_directory": {
+				"type": "string"
+			},
+			"param_lake_pattern": {
+				"type": "string"
+			},
+			"param_pod_path": {
+				"type": "string"
+			},
+			"param_pod_storage": {
+				"type": "string"
+			},
+			"param_delete_or_overwrite": {
+				"type": "int",
+				"defaultValue": 1
+			}
+		},
+		"variables": {
+			"var_lake_path": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/sync"
+		},
+		"annotations": []
+	}
+}

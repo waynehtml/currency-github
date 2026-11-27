@@ -1,0 +1,43 @@
+{
+	"name": "trg_PL_Multiple_Sources_M7_bn",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Multiple_Sources_M7",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file": "bn",
+					"delta": 1,
+					"skip_Sftp_to_Av": 0,
+					"skip_Av_to_Land": 0,
+					"skip_Land_to_Raw": 0,
+					"skip_Bn_Converter": 0,
+					"skip_Raw_to_Standard": 0,
+					"skip_Archive_Files": 1,
+					"mode": "append"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2023-03-09T05:05:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						15
+					],
+					"hours": [
+						0
+					]
+				}
+			}
+		}
+	}
+}

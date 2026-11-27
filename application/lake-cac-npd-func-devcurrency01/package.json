@@ -1,0 +1,21 @@
+{
+  "name": "func_app_installs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/identity": "^3.2.2",
+    "@azure/keyvault-keys": "^4.7.0",
+    "@azure/storage-blob": "^12.14.0",
+    "durable-functions": "^2.1.2",
+    "date-fns": "^3.6.0",
+    "date-holidays": "^3.23.12",
+    "chrono-node": "^2.7.5"
+
+  }
+}

@@ -1,0 +1,59 @@
+{
+	"name": "PL_Raw_to_Standardized_RCMP",
+	"properties": {
+		"activities": [
+			{
+				"name": "raw_to_standardized_rcmp",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/rcmp/standardized/raw_to_standardized",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": "restricted",
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"folder": {
+							"value": "@pipeline().parameters.folder",
+							"type": "Expression"
+						},
+						"environment": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						},
+						"land_storage": {
+							"value": "@pipeline().globalParameters.gpm_land_storage",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"folder": {
+				"type": "string",
+				"defaultValue": "2024-JAN"
+			}
+		},
+		"folder": {
+			"name": "RCMP/Dynamic"
+		},
+		"annotations": []
+	}
+}

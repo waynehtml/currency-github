@@ -1,0 +1,1229 @@
+{
+	"name": "PL_SFTP_to_AV_ISA",
+	"properties": {
+		"description": "File:\n4Ons\nDepositToHc\nExtractHstbTransfer\nHcToClient\nMAOCReissNotes\n4000PerParcel\nInventorysnapshot\nPreadvisementdata\nIncompletedepositinfo\nEmscontainersnapshot\nACDPTrace",
+		"activities": [
+			{
+				"name": "4Ons_Dep_Extract_Hc_Reiss",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@substring(pipeline().parameters.file,0,4)",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "4Ons",
+							"activities": [
+								{
+									"name": "Copy 4Ons",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('4Ons_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/4Ons/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - 4Ons",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy 4Ons",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy 4Ons').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Depo",
+							"activities": [
+								{
+									"name": "Copy DepositToHc",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('DepositToHc_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Depo/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - DepositToHc",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy DepositToHc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy DepositToHc').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Extr",
+							"activities": [
+								{
+									"name": "Copy ExtractHstbTransfer",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('ExtractHstbTransfer_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Extr/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - ExtractHstbTransfer",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy ExtractHstbTransfer",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy ExtractHstbTransfer').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "HcTo",
+							"activities": [
+								{
+									"name": "Copy HcToClient",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('HcToClient_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/HcTo/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - HcToClient",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy HcToClient",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy HcToClient').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "MAOC",
+							"activities": [
+								{
+									"name": "Copy MAOCReissNotes",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('ExtractReissNotes_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/MAOC/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - MAOCReissNotes",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy MAOCReissNotes",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy MAOCReissNotes').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "4000",
+							"activities": [
+								{
+									"name": "Copy 4000 Per Parcel",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('4000PerParcel_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/4000/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - 4000PerParcel",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy 4000 Per Parcel",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy 4000 Per Parcel').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Inve",
+							"activities": [
+								{
+									"name": "Copy Inventory Snapshot",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('InventorySnapshot_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Inve/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Inventorysnapshot",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Inventory Snapshot",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Inventory Snapshot').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Prea",
+							"activities": [
+								{
+									"name": "Copy Preadvisement Snapshot",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('PreadvisementData_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Prea/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Preadvisementdata",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Preadvisement Snapshot",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Preadvisement Snapshot').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Inco",
+							"activities": [
+								{
+									"name": "Copy Incomplete Deposit Info",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('IncompleteDepositInfo_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Inco/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Incompletedepositinfo",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Incomplete Deposit Info",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Incomplete Deposit Info').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Emsc",
+							"activities": [
+								{
+									"name": "Copy EMS Conatiner",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('EMSContainerSnapshot_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/Emsc/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Emscontainersnapshot",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy EMS Conatiner",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy EMS Conatiner').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "ACDP",
+							"activities": [
+								{
+									"name": "Copy ACDP",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('ACDPTrace_', replace(pipeline().parameters.date, '-', '_'),'*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "FileServerWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+													"type": "Expression"
+												},
+												"pm_keyname": "ISA-pass",
+												"pm_folder": "/ISA/",
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_av_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_host": {
+													"value": "@pipeline().globalParameters.gpm_av_host",
+													"type": "Expression"
+												},
+												"pm_user": {
+													"value": "@pipeline().globalParameters.gpm_av_user",
+													"type": "Expression"
+												},
+												"pm_key": "lake-avscan-password",
+												"pm_folder": "currency/ACDP/",
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - ACDPTrace",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy ACDP",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy ACDP').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "If file written",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "4Ons_Dep_Extract_Hc_Reiss",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('filesWritten'), 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Fail - source file missing",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat(pipeline().parameters.file, ' on ', pipeline().parameters.date, ' is missing.')",
+									"type": "Expression"
+								},
+								"errorCode": "404"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"filesWritten": {
+				"type": "Integer",
+				"defaultValue": 0
+			}
+		},
+		"folder": {
+			"name": "ISA/Dynamic"
+		},
+		"annotations": []
+	}
+}

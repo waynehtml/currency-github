@@ -1,0 +1,22 @@
+{
+	"name": "DS_land_funcapps_binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_landingzone_funcapps",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@null",
+					"type": "Expression"
+				},
+				"folderPath": "binary_converter",
+				"container": "land-currency"
+			}
+		}
+	}
+}

@@ -1,0 +1,143 @@
+{
+	"name": "PL_Raw_to_Standardized_NES",
+	"properties": {
+		"activities": [
+			{
+				"name": "File Validation",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@pipeline().globalParameters.gpm_nes_config.file_validation_notebook_path",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"pull_date": {
+							"value": "@pipeline().parameters.date",
+							"type": "Expression"
+						},
+						"file_key": {
+							"value": "@pipeline().parameters.file",
+							"type": "Expression"
+						},
+						"env": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set return_value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "File Validation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "notebook_return",
+					"value": {
+						"value": "@activity('File Validation').output.runOutput",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "check_file_size",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set return_value",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('notebook_return'),'valid')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Raw to Standardized",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@pipeline().globalParameters.gpm_nes_config.standardization_notebook_path",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"pull_date": {
+										"value": "@pipeline().parameters.date",
+										"type": "Expression"
+									},
+									"file_key": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"env": {
+										"value": "@pipeline().globalParameters.gpm_env",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"notebook_return": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "NES/Dynamic"
+		},
+		"annotations": []
+	}
+}

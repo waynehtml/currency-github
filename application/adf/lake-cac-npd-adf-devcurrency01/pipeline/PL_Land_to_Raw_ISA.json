@@ -1,0 +1,157 @@
+{
+	"name": "PL_Land_to_Raw_ISA",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get FIles In DIrectory",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_land_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": "land-currency",
+							"pm_folder": {
+								"value": "@concat('ISA/',substring(pipeline().parameters.file,0,4))",
+								"type": "Expression"
+							},
+							"pm_filename": "*.csv"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get FIles In DIrectory",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get FIles In DIrectory').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy Land to Raw",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat('ISA/',substring(pipeline().parameters.file,0,4))\n\n\n",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.restricted_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@toLower(concat('raw/internal/inventory_supply_accounting/',split(item().name,'_')[0],'/',concat(split(item().name,'_')[1],'-',split(item().name,'_')[2],'-',split(item().name,'_')[3])))",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"restricted_container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			}
+		},
+		"folder": {
+			"name": "ISA/Dynamic"
+		},
+		"annotations": []
+	}
+}

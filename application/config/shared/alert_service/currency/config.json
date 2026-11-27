@@ -1,0 +1,460 @@
+{
+  "env": {
+    "dev": {
+      "SubID": "1de5fd2d-2313-461a-acc4-07cdc509cdf4",
+      "ResGroup": "lake-cac-npd-rg-devcurrency",
+      "ADFName": "lake-cac-npd-adf-devcurrency01",
+      "recipients": {
+        "default": "dda-support-dev@bank-banque-canada.ca"
+      }
+    },
+    "stg": {
+      "SubID": "7c0bb47c-1b9b-4cb9-adbc-344efbe85bbc",
+      "ResGroup": "lake-cac-prd-rg-stgcurrency",
+      "ADFName": "lake-cac-prd-adf-stgcurrency01",
+      "recipients": {
+        "default": "datalakemonitoring-stg@bank-banque-canada.ca, dda-support-stg@bank-banque-canada.ca"
+      }
+    },
+    "prd": {
+      "SubID": "7c0bb47c-1b9b-4cb9-adbc-344efbe85bbc",
+      "ResGroup": "lake-cac-prd-rg-prdcurrency",
+      "ADFName": "lake-cac-prd-adf-prdcurrency01",
+      "recipients": {
+        "default": "DataLakeMonitoring-PRD@bank-banque-canada.ca, dda-support@bank-banque-canada.ca, mkarakus@bank-banque-canada.ca, mparahoo@bank-banque-canada.ca, SPoovin@bank-banque-canada.ca"
+      }
+    }
+  },
+  "predefinedBindings": {
+    "success": {
+      "rule": {
+        "kql": "ADFPipelineRun | sort by TimeGenerated desc | where TimeGenerated >= ago(22m) and PipelineName == '{PipelineName}' and Status == 'Succeeded'  | project RunId, PipelineName, Parameters, Tags, UserProperties, Annotations,  Status, Start, End"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/success.html"
+      }
+    },
+    "failure": {
+      "rule": {
+        "kql": "ADFPipelineRun | where TimeGenerated >= ago(22m) and PipelineName == '{PipelineName}' and Status == 'Failed' | join kind=inner (ADFActivityRun | where Status == 'Failed' | project PipelineRunId, Errors = ErrorMessage) on $left.RunId == $right.PipelineRunId | sort by TimeGenerated desc | summarize PipelineName = any(PipelineName), Parameters = any(Parameters), Tags = any(Tags), UserProperties = any(UserProperties), Annotations = any(Annotations), Status = any(Status), Start = any(Start), End = any(End), ErrorMessage = strcat_array(make_list(Errors), ' | ') by RunId"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/failure.html"
+      }
+    },
+    "cancel": {
+      "rule": {
+        "kql": "ADFPipelineRun | sort by TimeGenerated desc | where TimeGenerated >= ago(22m) and PipelineName == '{PipelineName}' and Status == 'Cancelled'  | project RunId, PipelineName, Parameters, Tags, UserProperties, Annotations,  Status, Start, End"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/cancel.html"
+      }
+    },
+	"absent": {
+      "rule": {
+        "kql": "let ParamPipelineName = '{PipelineName}';let ParamTimeRange=22m;let Log = ADFPipelineRun| where PipelineName == 'PL_Log_Notification' and Status == 'Succeeded' and TimeGenerated > ago(ParamTimeRange) | sort by TimeGenerated desc | extend Params=parse_json(Parameters) | project ParentRunId=tostring(Params.runid), ParentPipelineName = tostring(Params.pipeline), LogKey1=Params.key1, LogKey2=Params.key2, LogKey3=Params.key3;ADFPipelineRun| where Status == 'Succeeded' and PipelineName == ParamPipelineName| sort by TimeGenerated desc| join kind=inner (Log) on $left.RunId == $right.ParentRunId| project RunId,PipelineName,Parameters,Tags,UserProperties,Annotations,Status,Start,End, LogKey1, LogKey2, LogKey3"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/absent.html"
+      }
+    },
+	"absent_success": {
+      "rule": {
+        "kql": "let ParentPipelineName='{PipelineName}';let NoFilePipelineName='{NoFilePipelineName}';let AlertTimeRange=22m;let FamilyTimeRange=1d;let AllRuns=ADFPipelineRun | where TimeGenerated > ago(FamilyTimeRange) | where Status == 'Succeeded' | extend Predecessor=parse_json(Predecessors) | extend ParentRunId=tostring(Predecessor[0].PipelineRunId);let Level0=AllRuns | where PipelineName==ParentPipelineName and TimeGenerated > ago(AlertTimeRange) | extend Level=0 | extend RootId=RunId;let Level1=AllRuns | join kind=inner Level0 on $left.ParentRunId==$right.RunId | extend Level=1 | extend RootId=ParentRunId;let Level2=AllRuns | join kind=inner Level1 on $left.ParentRunId==$right.RunId | extend Level=2 | extend RootId=ParentRunId2;let Level3=AllRuns | join kind=inner Level2 on $left.ParentRunId==$right.RunId | extend Level=3 | extend RootId=ParentRunId2;let All=Level1 | project TimeGenerated,RootId,PipelineName,Level | union(Level2 | project TimeGenerated,RootId,PipelineName,Level) | union(Level3 | project TimeGenerated,RootId,PipelineName,Level) | order by Level asc,TimeGenerated asc;let Summary=All | summarize SubPipelines=strcat_array(make_list(PipelineName),',') by RootId;let PipelineRun=Level0 | join kind=leftouter Summary on $left.RunId==$right.RootId;PipelineRun | sort by TimeGenerated desc | where SubPipelines !contains NoFilePipelineName | project RunId,PipelineName,Parameters,Tags,UserProperties,Annotations,Status,Start,End,SubPipelines"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/success.html"
+      }
+    },
+	"absent_nofile": {
+      "rule": {
+        "kql": "let ParentPipelineName='{PipelineName}';let NoFilePipelineName='{NoFilePipelineName}';let AlertTimeRange=22m;let FamilyTimeRange=1d;let AllRuns=ADFPipelineRun | where TimeGenerated > ago(FamilyTimeRange) | where Status == 'Succeeded' | extend Predecessor=parse_json(Predecessors) | extend ParentRunId=tostring(Predecessor[0].PipelineRunId);let Level0=AllRuns | where PipelineName==ParentPipelineName and TimeGenerated > ago(AlertTimeRange) | extend Level=0 | extend RootId=RunId;let Level1=AllRuns | join kind=inner Level0 on $left.ParentRunId==$right.RunId | extend Level=1 | extend RootId=ParentRunId;let Level2=AllRuns | join kind=inner Level1 on $left.ParentRunId==$right.RunId | extend Level=2 | extend RootId=ParentRunId2;let Level3=AllRuns | join kind=inner Level2 on $left.ParentRunId==$right.RunId | extend Level=3 | extend RootId=ParentRunId2;let All=Level1 | project TimeGenerated,RootId,PipelineName,Level | union(Level2 | project TimeGenerated,RootId,PipelineName,Level) | union(Level3 | project TimeGenerated,RootId,PipelineName,Level) | order by Level asc,TimeGenerated asc;let Summary=All | summarize SubPipelines=strcat_array(make_list(PipelineName),',') by RootId;let PipelineRun=Level0 | join kind=inner Summary on $left.RunId==$right.RootId;PipelineRun | sort by TimeGenerated desc | where SubPipelines contains NoFilePipelineName | project RunId,PipelineName,Parameters,Tags,UserProperties,Annotations,Status,Start,End,SubPipelines"
+      },
+      "email": {
+        "recipient": "default",
+        "subject": "Alert: {alert_name} in {env}",
+        "body": "template/absent.html"
+      }
+    }
+  },
+  "alerts": [
+    {
+      "name": "Currency Cision Media Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_Cision_Media"
+        }
+      }
+    },
+    {
+      "name": "Currency Cision Media Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_Cision_Media"
+        }
+      }
+    },
+    {
+      "name": "Currency Cision Media Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_Cision_Media"
+        }
+      }
+    },
+	
+    {
+      "name": "Currency RCMP Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_RCMP"
+        }
+      }
+    },
+    {
+      "name": "Currency RCMP Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_RCMP"
+        }
+      }
+    },
+    {
+      "name": "Currency RCMP Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_RCMP"
+        }
+      }
+    },
+	
+    {
+      "name": "Currency SAP BRS Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_BRS"
+        }
+      }
+    },
+    {
+      "name": "Currency SAP BRS Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_BRS"
+        }
+      }
+    },
+    {
+      "name": "Currency SAP BRS Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_BRS", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+    {
+      "name": "Currency SAP BRS No File",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_BRS", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+	
+    {
+      "name": "Currency M7 Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_M7"
+        }
+      }
+    },
+    {
+      "name": "Currency M7 Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_M7"
+        }
+      }
+    },
+    {
+      "name": "Currency M7 Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_M7", "NoFilePipelineName": "PL_Warning_Email"
+        }
+      }
+    },
+    {
+      "name": "Currency M7 No file",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_M7", "NoFilePipelineName": "PL_Warning_Email"
+        }
+      }
+    },	
+
+    {
+      "name": "Currency ISA Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_ISA"
+        }
+      }
+    },
+    {
+      "name": "Currency ISA Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_ISA"
+        }
+      }
+    },
+    {
+      "name": "Currency ISA Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_ISA"
+        }
+      }
+    },
+	
+    {
+      "name": "Currency Curation Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Standardized_to_Curation"
+        }
+      }
+    },
+    {
+      "name": "Currency Curation Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Standardized_to_Curation"
+        }
+      }
+    },
+    {
+      "name": "Currency Curation Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_Standardized_to_Curation", "NoFilePipelineName": "PL_Warning_Email"
+        }
+      }
+    },
+    {
+      "name": "Currency Curation No File",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_Standardized_to_Curation", "NoFilePipelineName": "PL_Warning_Email"
+        }
+      }
+    },
+
+    {
+      "name": "Currency CBN Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_CBN_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency CBN Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_CBN_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency CBN Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_CBN_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+    {
+      "name": "Currency CBN No File",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_CBN_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+
+    {
+      "name": "Currency QM Lab Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_QM_Lab_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Lab Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_QM_Lab_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Lab Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_QM_Lab_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Lab No File",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_QM_Lab_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+
+    {
+      "name": "Currency QM Press Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_QM_Press_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Press Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_QM_Press_Control_Main"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Press Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_success",
+        "parameter": {
+          "PipelineName": "PL_QM_Press_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+    {
+      "name": "Currency QM Press No File",
+      "status": "enabled",
+      "ref": {
+        "binding": "absent_nofile",
+        "parameter": {
+          "PipelineName": "PL_QM_Press_Control_Main", "NoFilePipelineName": "PL_Log_Notification"
+        }
+      }
+    },
+    {
+      "name": "Currency NES Succeeded",
+      "status": "enabled",
+      "ref": {
+        "binding": "success",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_NES"
+        }
+      }
+    },
+    {
+      "name": "Currency NES Cancelled",
+      "status": "enabled",
+      "ref": {
+        "binding": "cancel",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_NES"
+        }
+      }
+    },
+    {
+      "name": "Currency NES Failed",
+      "status": "enabled",
+      "ref": {
+        "binding": "failure",
+        "parameter": {
+          "PipelineName": "PL_Control_Main_NES"
+        }
+      }
+    }
+  ]
+}

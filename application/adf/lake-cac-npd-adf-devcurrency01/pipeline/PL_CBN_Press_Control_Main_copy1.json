@@ -1,0 +1,361 @@
+{
+	"name": "PL_CBN_Press_Control_Main_copy1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Skip source_to_land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set ds_map",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_source_to_land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_SPO_Copy_Source_to_Land",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@activity('PL_SPO_Copy_Source_to_Land').output.pipelineReturnValue.dates",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PL_SPO_Copy_Source_to_Land",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_SPO_Copy_Source_to_Land_dbk",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"new_1_or_matched_0": {
+										"value": "@if(empty(pipeline().parameters.file_date), 1 , 0 )",
+										"type": "Expression"
+									},
+									"param_spo_drive_id": {
+										"value": "@json(variables('var_ds_map'))['spo_drive_id']",
+										"type": "Expression"
+									},
+									"param_spo_path": {
+										"value": "@json(variables('var_ds_map'))['spo_path']",
+										"type": "Expression"
+									},
+									"param_spo_file_pattern": {
+										"value": "@json(variables('var_ds_map'))['file_pattern']",
+										"type": "Expression"
+									},
+									"param_raw_container": {
+										"value": "@json(variables('var_ds_map'))['raw_container']",
+										"type": "Expression"
+									},
+									"param_raw_path": {
+										"value": "@json(variables('var_ds_map'))['raw_root']",
+										"type": "Expression"
+									},
+									"param_land_container": {
+										"value": "@json(variables('var_ds_map'))['land_container']",
+										"type": "Expression"
+									},
+									"param_land_path": {
+										"value": "@json(variables('var_ds_map'))['land_root']",
+										"type": "Expression"
+									},
+									"param_date_regex": {
+										"value": "@json(variables('var_ds_map'))['date_regex']",
+										"type": "Expression"
+									},
+									"param_date_iformat": {
+										"value": "@json(variables('var_ds_map'))['date_iformat']",
+										"type": "Expression"
+									},
+									"param_date_oformat": {
+										"value": "@json(variables('var_ds_map'))['date_oformat']",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Append file_date",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_dates",
+								"value": {
+									"value": "@pipeline().parameters.file_date",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "No dates returned",
+				"description": "",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Skip source_to_land",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(\n    equals(pipeline().parameters.skip_source_to_land, 0), \n    empty(variables('var_dates'))\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Set continue as 1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_continue",
+								"value": 1
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Set continue as 0",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "PL_Log_Notification - no diff date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_continue",
+								"value": 0
+							}
+						},
+						{
+							"name": "PL_Log_Notification - no diff date",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.file_date",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Skip land_to_raw",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "No dates returned",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    equals(pipeline().parameters.skip_land_to_raw,1),\n    equals(variables('var_continue'),0)\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Copy_Folders_From_Land_to_Raw",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Raw",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"param_land_container": {
+										"value": "@json(variables('var_ds_map'))['land_container']",
+										"type": "Expression"
+									},
+									"param_land_root": {
+										"value": "@json(variables('var_ds_map'))['land_root']",
+										"type": "Expression"
+									},
+									"param_raw_container": {
+										"value": "@json(variables('var_ds_map'))['raw_container']",
+										"type": "Expression"
+									},
+									"param_raw_root": {
+										"value": "@json(variables('var_ds_map'))['raw_root']",
+										"type": "Expression"
+									},
+									"param_folders": {
+										"value": "@variables('var_dates')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Skip raw_to_standard",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Skip land_to_raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    equals(pipeline().parameters.skip_raw_to_standard,1),\n    equals(variables('var_continue'),0)\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set ds_map",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var_ds_map",
+					"value": {
+						"value": "@string(pipeline().globalParameters.gpm_cbn_press)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"file_date": {
+				"type": "string"
+			},
+			"skip_source_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standard": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"var_dates": {
+				"type": "Array"
+			},
+			"var_continue": {
+				"type": "Integer",
+				"defaultValue": 1
+			},
+			"var_raw_container": {
+				"type": "String"
+			},
+			"var_land_container": {
+				"type": "String"
+			},
+			"var_drive_root": {
+				"type": "String"
+			},
+			"var_raw_root": {
+				"type": "String"
+			},
+			"var_land_root": {
+				"type": "String"
+			},
+			"var_ds_map": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/archive"
+		},
+		"annotations": []
+	}
+}

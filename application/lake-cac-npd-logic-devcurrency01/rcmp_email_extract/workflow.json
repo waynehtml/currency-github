@@ -1,0 +1,567 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Initialize_variables_-_unique_folders": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_unifolders",
+              "type": "array",
+              "value": []
+            }
+          ]
+        },
+        "runAfter": {
+          "Scope_-_Upload_attachments": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_attachment_name": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_attachname",
+              "type": "string"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_folders": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_folder_name": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_foldername",
+              "type": "string"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_folders": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_file_name": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_filename",
+              "type": "string"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_folders": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_folders": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_folders",
+              "type": "array",
+              "value": []
+            }
+          ]
+        },
+        "runAfter": {
+          "Scope_-_Get_emails": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_emails": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_emails",
+              "type": "array"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "Scope_-_Get_emails": {
+        "type": "Scope",
+        "actions": {
+          "Condition_-_env_is_prd": {
+            "type": "If",
+            "expression": {
+              "and": [
+                {
+                  "equals": [
+                    "@parameters('PARAM_ENV')",
+                    "prd"
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "Append_to_string_variable_-_email_subject_filter_for_prd": {
+                "type": "AppendToStringVariable",
+                "inputs": {
+                  "name": "var_email_subject_filter",
+                  "value": "@concat(' AND -subject:test')"
+                }
+              }
+            },
+            "else": {
+              "actions": {
+                "Append_to_string_variable_-_email_subject_filter_for_non-prd": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "var_email_subject_filter",
+                    "value": "@concat(' AND subject:', parameters('PARAM_ENV'))"
+                  }
+                }
+              }
+            }
+          },
+          "Compose_-_email_subject_filter": {
+            "type": "Compose",
+            "inputs": "@variables('var_email_subject_filter')",
+            "runAfter": {
+              "Condition_-_env_is_prd": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Get_emails_(V3)": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "referenceName": "office365"
+                }
+              },
+              "method": "get",
+              "path": "/v3/Mail",
+              "queries": {
+                "fetchOnlyWithAttachment": true,
+                "folderPath": "Inbox",
+                "fetchOnlyUnread": false,
+                "fetchOnlyFlagged": false,
+                "includeAttachments": true,
+                "searchQuery": "received>=@{adddays(utcnow(),-1)} AND @{variables('var_email_subject_filter')}"
+              }
+            },
+            "runAfter": {
+              "Compose_-_email_subject_filter": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Set_variable_-_emails_-_all": {
+            "type": "SetVariable",
+            "inputs": {
+              "name": "var_emails",
+              "value": "@reverse(body('Get_emails_(V3)')?['value'])"
+            },
+            "runAfter": {
+              "Get_emails_(V3)": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Compose_-_emails": {
+            "type": "Compose",
+            "inputs": "@variables('var_emails')",
+            "runAfter": {
+              "Set_variable_-_emails_-_all": [
+                "SUCCEEDED"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_email_subject_filter": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Initialize_variables_-_email_subject_filter": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "var_email_subject_filter",
+              "type": "string",
+              "value": "@{concat('subject:',parameters('PARAM_RCMP_EMAIL_SUBJECT_KEYWORD'))}"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variables_-_emails": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Scope_-_Upload_attachments": {
+        "type": "Scope",
+        "actions": {
+          "For_each_-_email": {
+            "type": "foreach",
+            "foreach": "@variables('var_emails')",
+            "actions": {
+              "For_each_-_attachment": {
+                "type": "foreach",
+                "foreach": "@items('For_each_-_email')?['attachments']",
+                "actions": {
+                  "Set_variable_-_attachname": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "var_attachname",
+                      "value": "@items('For_each_-_attachment')['name']"
+                    },
+                    "runAfter": {
+                      "Compose_-_attachment": [
+                        "SUCCEEDED"
+                      ]
+                    }
+                  },
+                  "Compose_-_attachname": {
+                    "type": "Compose",
+                    "inputs": "@variables('var_attachname')",
+                    "runAfter": {
+                      "Set_variable_-_attachname": [
+                        "SUCCEEDED"
+                      ]
+                    }
+                  },
+                  "Compose_-_filename": {
+                    "type": "Compose",
+                    "inputs": "@variables('var_filename')",
+                    "runAfter": {
+                      "Set_variable_-_filename": [
+                        "SUCCEEDED"
+                      ]
+                    }
+                  },
+                  "Compose_-_attachment": {
+                    "type": "Compose",
+                    "inputs": "@{items('For_each_-_attachment')}@{items('For_each_-_attachment')['name']}"
+                  },
+                  "Condition": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "not": {
+                            "equals": [
+                              "@variables('var_filename')",
+                              "invalid"
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Compose_-_foldername": {
+                        "type": "Compose",
+                        "inputs": "@variables('var_foldername')",
+                        "runAfter": {
+                          "Condition_-_if_SEIZED": [
+                            "SUCCEEDED"
+                          ]
+                        }
+                      },
+                      "attachname": {
+                        "type": "Compose",
+                        "inputs": "@variables('var_attachname')"
+                      },
+                      "Execute_JavaScript_code_-_Get_foldername": {
+                        "type": "JavaScriptCode",
+                        "inputs": {
+                          "code": "  //\r\n  const fileName = workflowContext.actions.attachname.outputs\r\n  // Remove file extension\r\n  const nameWithoutExt = fileName.replace(/\\.[^/.]+$/, '');\r\n  \r\n  // Month mapping for various formats\r\n  const monthMap = {\r\n    'jan': 'JAN', 'january': 'JAN',\r\n    'feb': 'FEB', 'february': 'FEB',\r\n    'mar': 'MAR', 'march': 'MAR',\r\n    'apr': 'APR', 'april': 'APR', 'aprl': 'APR',\r\n    'may': 'MAY',\r\n    'jun': 'JUN', 'june': 'JUN',\r\n    'jul': 'JUL', 'july': 'JUL',\r\n    'aug': 'AUG', 'august': 'AUG',\r\n    'sep': 'SEP', 'sept': 'SEP', 'september': 'SEP',\r\n    'oct': 'OCT', 'october': 'OCT',\r\n    'nov': 'NOV', 'november': 'NOV',\r\n    'dec': 'DEC', 'december': 'DEC'\r\n  };\r\n  \r\n  // Get current year as fallback\r\n  const currentYear = new Date().getFullYear();\r\n  \r\n  // Convert to lowercase and split into parts\r\n  const parts = nameWithoutExt.toLowerCase().split(/[\\s\\-_]+/);\r\n  \r\n  let month = null;\r\n  let year = null;\r\n  \r\n  // Find month and year in the parts\r\n  for (const part of parts) {\r\n    // Check if it's a month\r\n    if (monthMap[part]) {\r\n      month = monthMap[part];\r\n    }\r\n    // Check if it's a year (4 digits starting with 19 or 20)\r\n    else if (/^(19|20)\\d{2}$/.test(part)) {\r\n      year = parseInt(part);\r\n    }\r\n  }\r\n  \r\n  // Use current year if no year found\r\n  if (!year) {\r\n    year = currentYear;\r\n  }\r\n  \r\n  // Return formatted result if month is found\r\n  if (month) {\r\n    return `${year}-${month}`;\r\n  } else {\r\n    // Return original if no month found\r\n    return 'invalid';\r\n  }"
+                        },
+                        "runAfter": {
+                          "attachname": [
+                            "SUCCEEDED"
+                          ]
+                        }
+                      },
+                      "Condition_-_valid_foldername": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "not": {
+                                "equals": [
+                                  "@variables('var_foldername')",
+                                  "invalid"
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "Compose_-_full_file_name": {
+                            "type": "Compose",
+                            "inputs": "@concat(parameters('PARAM_RCMP_BLOB_LAND_PATH'),'/',variables('var_foldername'),'/',variables('var_filename'))"
+                          },
+                          "Upload_blob_to_storage_container_based_on_a_URI": {
+                            "type": "ServiceProvider",
+                            "inputs": {
+                              "parameters": {
+                                "blobUri": "@outputs('Compose_-_full_file_name')",
+                                "content": "@base64ToBinary(items('For_each_-_attachment')['contentBytes'])",
+                                "overrideIfExists": "true"
+                              },
+                              "serviceProviderConfiguration": {
+                                "connectionName": "AzureBlob-land01",
+                                "operationId": "uploadBlobFromUri",
+                                "serviceProviderId": "/serviceProviders/AzureBlob"
+                              }
+                            },
+                            "runAfter": {
+                              "Compose_-_full_file_name": [
+                                "SUCCEEDED"
+                              ]
+                            }
+                          },
+                          "Append_to_array_variable_-_folders": {
+                            "type": "AppendToArrayVariable",
+                            "inputs": {
+                              "name": "var_folders",
+                              "value": "@variables('var_foldername')"
+                            },
+                            "runAfter": {
+                              "Upload_blob_to_storage_container_based_on_a_URI": [
+                                "SUCCEEDED"
+                              ]
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {}
+                        },
+                        "runAfter": {
+                          "Compose_-_foldername": [
+                            "SUCCEEDED"
+                          ]
+                        }
+                      },
+                      "Condition_-_if_SEIZED": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "contains": [
+                                "@toUpper(variables('var_attachname'))",
+                                "SEIZED"
+                              ]
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "Set_variable_-_foldername_-_seized": {
+                            "type": "SetVariable",
+                            "inputs": {
+                              "name": "var_foldername",
+                              "value": "@concat(outputs('Execute_JavaScript_code_-_Get_foldername'),'-SEIZED')"
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {
+                            "Set_variable_-_foldername": {
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "var_foldername",
+                                "value": "@outputs('Execute_JavaScript_code_-_Get_foldername')"
+                              }
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "Execute_JavaScript_code_-_Get_foldername": [
+                            "SUCCEEDED"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Compose_-_filename": [
+                        "SUCCEEDED"
+                      ]
+                    }
+                  },
+                  "Set_variable_-_filename": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "var_filename",
+                      "value": "@variables('var_attachname')"
+                    },
+                    "runAfter": {
+                      "Compose_-_attachname": [
+                        "SUCCEEDED"
+                      ]
+                    }
+                  }
+                },
+                "runAfter": {
+                  "Compose_-_email": [
+                    "SUCCEEDED"
+                  ]
+                },
+                "runtimeConfiguration": {
+                  "concurrency": {
+                    "repetitions": 1
+                  }
+                }
+              },
+              "Compose_-_email": {
+                "type": "Compose",
+                "inputs": "@items('For_each_-_email')"
+              }
+            },
+            "runtimeConfiguration": {
+              "concurrency": {
+                "repetitions": 1
+              }
+            }
+          },
+          "Compose_-_folders": {
+            "type": "Compose",
+            "inputs": "@variables('var_folders')",
+            "runAfter": {
+              "For_each_-_email": [
+                "SUCCEEDED"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_file_name": [
+            "SUCCEEDED"
+          ],
+          "Initialize_variables_-_folder_name": [
+            "SUCCEEDED"
+          ],
+          "Initialize_variables_-_attachment_name": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Scope_-_Run_ADF_pipeline": {
+        "type": "Scope",
+        "actions": {
+          "Set_variable_-__unique_folders": {
+            "type": "SetVariable",
+            "inputs": {
+              "name": "var_unifolders",
+              "value": "@union(variables('var_folders'), variables('var_folders'))"
+            }
+          },
+          "Compose_-_unique_folders": {
+            "type": "Compose",
+            "inputs": "@variables('var_unifolders')",
+            "runAfter": {
+              "Set_variable_-__unique_folders": [
+                "SUCCEEDED"
+              ]
+            }
+          },
+          "Condition_-_run_ADF": {
+            "type": "If",
+            "expression": {
+              "and": [
+                {
+                  "equals": [
+                    "@parameters('PARAM_RCMP_RUN_ADF')",
+                    true
+                  ]
+                },
+                {
+                  "greater": [
+                    "@length(variables('var_unifolders'))",
+                    0
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "Create_a_pipeline_run_-_PL_Control_Main_RCMP": {
+                "type": "ApiConnection",
+                "inputs": {
+                  "host": {
+                    "connection": {
+                      "referenceName": "azuredatafactory"
+                    }
+                  },
+                  "method": "post",
+                  "body": {
+                    "folders": "@{join(variables('var_unifolders'),',')}",
+                    "skip_Land_to_Raw": "0",
+                    "skip_Raw_to_Standard": "0",
+                    "skip_Standard_to_Curation": "0",
+                    "load_type": "incremental"
+                  },
+                  "path": "/subscriptions/@{encodeURIComponent(parameters('PARAM_ENV_SUB_ID'))}/resourcegroups/@{encodeURIComponent(parameters('PARAM_ENV_RG'))}/providers/Microsoft.DataFactory/factories/@{encodeURIComponent(parameters('PARM_ENV_ADF_NAME'))}/pipelines/@{encodeURIComponent('PL_Control_Main_RCMP_Multiple')}/CreateRun",
+                  "queries": {
+                    "x-ms-api-version": "2017-09-01-preview"
+                  }
+                },
+                "limit": {
+                  "timeout": "PT1H"
+                }
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Compose_-_unique_folders": [
+                "SUCCEEDED"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_variables_-_unique_folders": [
+            "SUCCEEDED"
+          ]
+        }
+      },
+      "Response": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200
+        },
+        "runAfter": {
+          "Scope_-_Run_ADF_pipeline": [
+            "SUCCEEDED"
+          ]
+        }
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    }
+  },
+  "kind": "Stateful"
+}

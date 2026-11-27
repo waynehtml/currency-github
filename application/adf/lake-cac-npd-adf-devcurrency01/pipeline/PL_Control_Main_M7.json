@@ -1,0 +1,341 @@
+{
+	"name": "PL_Control_Main_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "date",
+					"value": {
+						"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If No Files",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check file existence if downloading",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(equals(pipeline().parameters.skip_Sftp_to_Av, 0),\n    equals(activity('Filter for Todays Files').output.FilteredItemsCount, 0))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Control_Dataflow_M7",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Control_Dataflow_M7",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"delta": {
+										"value": "@pipeline().parameters.delta",
+										"type": "Expression"
+									},
+									"skip_Sftp_to_Av": {
+										"value": "@pipeline().parameters.skip_Sftp_to_Av",
+										"type": "Expression"
+									},
+									"skip_Av_to_Land": {
+										"value": "@pipeline().parameters.skip_Av_to_Land",
+										"type": "Expression"
+									},
+									"skip_Land_to_Raw": {
+										"value": "@pipeline().parameters.skip_Land_to_Raw",
+										"type": "Expression"
+									},
+									"skip_Bn_Converter": {
+										"value": "@pipeline().parameters.skip_Bn_Converter",
+										"type": "Expression"
+									},
+									"skip_Raw_to_Standard": {
+										"value": "@pipeline().parameters.skip_Raw_to_Standard",
+										"type": "Expression"
+									},
+									"skip_Archive_Files": {
+										"value": "@pipeline().parameters.skip_Archive_Files",
+										"type": "Expression"
+									},
+									"p_src_hostname": {
+										"value": "@pipeline().parameters.hostname",
+										"type": "Expression"
+									},
+									"p_src_username": {
+										"value": "@pipeline().parameters.username",
+										"type": "Expression"
+									},
+									"p_src_key": {
+										"value": "@pipeline().parameters.key",
+										"type": "Expression"
+									},
+									"p_src_folder": {
+										"value": "@pipeline().parameters.folder",
+										"type": "Expression"
+									},
+									"site": {
+										"value": "@pipeline().parameters.site",
+										"type": "Expression"
+									},
+									"mode": {
+										"value": "@pipeline().parameters.mode",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Execute PL_Warning_Email",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Warning_Email",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						},
+						{
+							"name": "PL_Log_Notification",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Execute PL_Warning_Email",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"key2": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Check file existence if downloading",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Sftp_to_Av, 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Get Files",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_sftp_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_hostname": {
+											"value": "@pipeline().parameters.hostname",
+											"type": "Expression"
+										},
+										"pm_username": {
+											"value": "@pipeline().parameters.username",
+											"type": "Expression"
+										},
+										"pm_keyname": {
+											"value": "@pipeline().parameters.key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@pipeline().parameters.folder",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "SftpReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false,
+									"disableChunking": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Filter for Todays Files",
+							"type": "Filter",
+							"dependsOn": [
+								{
+									"activity": "Get Files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('Get Files').output.childItems",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@if(equals(pipeline().parameters.file,'bn'), equals(and(contains(item().name, 'BNList2'), contains(item().name, replace(variables('date'), '-', ''))), true), equals(or(and(contains(item().name, 'HC'), contains(item().name, replace(variables('date'), '-', ''))),and(contains(item().name, 'ShiftBalance'), contains(item().name, replace(variables('date'), '-', '')))), true))",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"delta": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"skip_Sftp_to_Av": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Av_to_Land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Land_to_Raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Bn_Converter": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Raw_to_Standard": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Archive_Files": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"hostname": {
+				"type": "string",
+				"defaultValue": "192.168.15.119"
+			},
+			"username": {
+				"type": "string",
+				"defaultValue": "dl_maoc_qa_s"
+			},
+			"key": {
+				"type": "string",
+				"defaultValue": "M7-pass"
+			},
+			"folder": {
+				"type": "string",
+				"defaultValue": "/BOC/"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "append"
+			}
+		},
+		"variables": {
+			"date": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "M7/Control"
+		},
+		"annotations": []
+	}
+}

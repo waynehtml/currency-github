@@ -1,0 +1,84 @@
+{
+	"name": "PL_Call_AZF_Func",
+	"properties": {
+		"activities": [
+			{
+				"name": "Call Function",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": {
+						"value": "@concat('utility/',pipeline().parameters.function)",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@pipeline().parameters.parameters",
+						"type": "Expression"
+					},
+					"method": "POST"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_funcapps2",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set variable - value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Call Function",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "value",
+							"value": {
+								"type": "Expression",
+								"content": "@activity('Call Function').output.value"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"function": {
+				"type": "string",
+				"defaultValue": "extractDate"
+			},
+			"parameters": {
+				"type": "object",
+				"defaultValue": {
+					"str": "QA_Lab_Data_Batch_N250001_20250528.csv",
+					"regex": "_(\\d{8})\\.csv$",
+					"iformat": "yyyyMMdd",
+					"oformat": "yyyy-MM-dd"
+				}
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

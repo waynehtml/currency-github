@@ -1,0 +1,46 @@
+{
+	"name": "trg_PL_Standardized_to_Curation_m7_unfits",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Standardized_to_Curation",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "aoc_m7_unfits",
+					"load_type": "incremental_load",
+					"mode": "append"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2023-11-24T14:22:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						15
+					],
+					"hours": [
+						6
+					],
+					"weekDays": [
+						"Sunday",
+						"Monday",
+						"Tuesday",
+						"Wednesday",
+						"Thursday",
+						"Friday",
+						"Saturday"
+					]
+				}
+			}
+		}
+	}
+}

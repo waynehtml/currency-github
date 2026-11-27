@@ -1,0 +1,261 @@
+{
+	"name": "PL_Raw_to_Standardized_M7",
+	"properties": {
+		"activities": [
+			{
+				"name": "File Validation",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat('/currency/m7/',pipeline().parameters.file,'/20_standardized/file_validation')",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"date": {
+							"value": "@pipeline().parameters.date",
+							"type": "Expression"
+						},
+						"site": {
+							"value": "@pipeline().parameters.site",
+							"type": "Expression"
+						},
+						"mode": {
+							"value": "@pipeline().parameters.mode",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Raw to Standardized",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Data Validation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat('/currency/m7/',pipeline().parameters.file,'/20_standardized/raw_to_standardized')",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"land_storage": {
+							"value": "@pipeline().globalParameters.gpm_land_storage",
+							"type": "Expression"
+						},
+						"land_container": {
+							"value": "@pipeline().parameters.land_container",
+							"type": "Expression"
+						},
+						"date": {
+							"value": "@pipeline().parameters.date",
+							"type": "Expression"
+						},
+						"file": {
+							"value": "@pipeline().parameters.file",
+							"type": "Expression"
+						},
+						"site": {
+							"value": "@pipeline().parameters.site",
+							"type": "Expression"
+						},
+						"mode": {
+							"value": "@pipeline().parameters.mode",
+							"type": "Expression"
+						},
+						"env": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Data Validation",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "File Validation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat('/currency/m7/',pipeline().parameters.file,'/20_standardized/data_validation')",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"date": {
+							"value": "@pipeline().parameters.date",
+							"type": "Expression"
+						},
+						"site": {
+							"value": "@pipeline().parameters.site",
+							"type": "Expression"
+						},
+						"mode": {
+							"value": "@pipeline().parameters.mode",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "If Warning Validations Failed",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "File Validation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@if(equals(pipeline().parameters.file, 'bn'), equals(length(activity('File Validation').output.runOutput), 0), true)\n",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute PL_Warning_Email",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Warning_Email",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			},
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"tenant_id_secret": {
+				"type": "string",
+				"defaultValue": "lake-tenant-id"
+			},
+			"spn_key_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-key"
+			},
+			"spn_id_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-id"
+			},
+			"kv_scope": {
+				"type": "string",
+				"defaultValue": "lake-kv-currency-scope"
+			},
+			"site": {
+				"type": "string",
+				"defaultValue": "maoc"
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "append"
+			}
+		},
+		"variables": {
+			"v_file_type": {
+				"type": "String"
+			},
+			"v_type": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "M7/Dynamic"
+		},
+		"annotations": []
+	}
+}

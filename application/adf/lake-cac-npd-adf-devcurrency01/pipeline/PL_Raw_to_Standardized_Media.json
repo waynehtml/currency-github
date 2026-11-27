@@ -1,0 +1,51 @@
+{
+	"name": "PL_Raw_to_Standardized_Media",
+	"properties": {
+		"activities": [
+			{
+				"name": "Raw_To_Standardized",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/currency/cision/media/raw_to_standardized",
+					"baseParameters": {
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"environment": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						},
+						"run_date": {
+							"value": "@pipeline().parameters.run_date",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"run_date": {
+				"type": "string",
+				"defaultValue": "2025-02-26"
+			}
+		},
+		"folder": {
+			"name": "cision/Sub Control"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,325 @@
+{
+	"name": "PL_SFTP_to_Landing_BRS",
+	"properties": {
+		"description": "In case a file name is provided, download the file by the file name. otherwise, use file_date to search a matching file. In either case, return the file name.",
+		"activities": [
+			{
+				"name": "Set file count as return value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "If files copied",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "file_count",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('file_count')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "Set file pattern",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_pattern",
+					"value": {
+						"value": "@concat('DataLakeExtract',toUpper(pipeline().parameters.brs_filetype),'_',replace(pipeline().parameters.file_date,'-','_'),'_*.csv')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Copy files from source to AV",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Set file pattern",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "SftpReadSettings",
+							"recursive": false,
+							"wildcardFolderPath": {
+								"value": "@pipeline().globalParameters.gpm_sap_sftp_folder",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "@variables('file_pattern')",
+								"type": "Expression"
+							},
+							"deleteFilesAfterCompletion": false,
+							"disableChunking": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "FileServerWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_sftp_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_hostname": {
+								"value": "@pipeline().globalParameters.gpm_sap_sftp_host",
+								"type": "Expression"
+							},
+							"pm_username": {
+								"value": "@pipeline().globalParameters.gpm_sap_sftp_user",
+								"type": "Expression"
+							},
+							"pm_keyname": {
+								"value": "@pipeline().globalParameters.gpm_sap_sftp_user_password_kvkey",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@pipeline().globalParameters.gpm_sap_sftp_folder",
+								"type": "Expression"
+							},
+							"pm_filename": {
+								"value": "@null",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_av_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_host": {
+								"value": "@pipeline().globalParameters.gpm_av_host",
+								"type": "Expression"
+							},
+							"pm_user": {
+								"value": "@pipeline().globalParameters.gpm_av_user",
+								"type": "Expression"
+							},
+							"pm_key": {
+								"value": "@pipeline().globalParameters.gpm_av_pass_key",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@concat(pipeline().globalParameters.gpm_sap_av_path,'/',pipeline().parameters.file_date)",
+								"type": "Expression"
+							},
+							"pm_filename": "@null"
+						}
+					}
+				]
+			},
+			{
+				"name": "If files copied",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set file count",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(variables('file_count'),0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy AV BRS File to Landing",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Wait 10 seconds for Anti-virus scan",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFolderPath": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_av_path,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.*",
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_av_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_host": {
+											"value": "@pipeline().globalParameters.gpm_av_host",
+											"type": "Expression"
+										},
+										"pm_user": {
+											"value": "@pipeline().globalParameters.gpm_av_user",
+											"type": "Expression"
+										},
+										"pm_key": {
+											"value": "@pipeline().globalParameters.gpm_av_pass_key",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_av_path,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": "@null"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_sap_land_path,'/',pipeline().parameters.file_date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@null",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Wait 10 seconds for Anti-virus scan",
+							"description": "",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 10
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set file count",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Copy files from source to AV",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_count",
+					"value": {
+						"value": "@int(activity('Copy files from source to AV').output.filesWritten)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"brs_filetype": {
+				"type": "string",
+				"defaultValue": "qm11"
+			},
+			"file_date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"file_pattern": {
+				"type": "String"
+			},
+			"file_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			}
+		},
+		"folder": {
+			"name": "SAP/Control/Dynamic"
+		},
+		"annotations": []
+	}
+}

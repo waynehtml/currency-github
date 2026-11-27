@@ -1,0 +1,8 @@
+{
+  "projects": [
+    {
+      "name": "currency",
+      "root": "/config-currency/alert_service/currency/"
+    }
+  ]
+}

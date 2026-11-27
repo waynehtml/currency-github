@@ -1,0 +1,152 @@
+{
+	"name": "PL_Land_to_Raw_NES",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get FIles In DIrectory",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_land_binary",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": "@pipeline().globalParameters.gpm_nes_config.land_container",
+							"pm_folder": {
+								"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,pipeline().parameters.file,'/',pipeline().parameters.date)",
+								"type": "Expression"
+							},
+							"pm_filename": "*.csv"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get FIles In DIrectory",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get FIles In DIrectory').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy Land to Raw",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_land_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,pipeline().parameters.file,'/',pipeline().parameters.date)",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_raw_binary",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().globalParameters.gpm_nes_config.raw_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@toLower(concat(pipeline().globalParameters.gpm_nes_config.raw_folder,pipeline().parameters.file,'/',pipeline().parameters.date))",
+											"type": "Expression"
+										},
+										"pm_filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "NES/Dynamic"
+		},
+		"annotations": []
+	}
+}

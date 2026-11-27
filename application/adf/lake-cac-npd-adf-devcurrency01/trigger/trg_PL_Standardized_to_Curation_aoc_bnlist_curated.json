@@ -1,0 +1,36 @@
+{
+	"name": "trg_PL_Standardized_to_Curation_aoc_bnlist_curated",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Standardized_to_Curation",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "aoc_bnlist_curated",
+					"load_type": "initial_load"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2024-12-16T15:27:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						15
+					],
+					"hours": [
+						3
+					]
+				}
+			}
+		}
+	}
+}

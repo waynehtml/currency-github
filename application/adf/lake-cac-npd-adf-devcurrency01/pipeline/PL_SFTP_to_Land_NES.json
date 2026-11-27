@@ -1,0 +1,1135 @@
+{
+	"name": "PL_SFTP_to_Land_NES",
+	"properties": {
+		"description": "File Extracts (10):\nWithdrawals (nes_withdrawals_DATE)\nCounterfeits (nes_counterfeits _DATE)\nInventory Snapshot (nes_inventory_snapshot_DATE)\nShortage (nes_shortage_DATE)\nOvercap (nes_overcap_DATE)\nCallbacks (merged with nes_shipments)\nRDC Inventories (split in nes_rdc_profile and nes_rdc_profile_details)\nShipments (nes_shipments_DATE)\nNon-Conformances (nes_non_conformances_DATE)\nDeposits (nes_deposits_DATE)",
+		"activities": [
+			{
+				"name": "Copy files from SFTP to Landing",
+				"description": "Extracts (10):nes_withdrawals_DATE\nnes_counterfeits_DATE\nnes_inventory_snapshot_DATE\nnes_shortage_DATE\nnes_overcap_DATE\nnes_rdc_profile_DATE\nnes_rdc_profile_details_DATE\nnes_shipments_DATE\nnes_non_conformances_DATE\nnes_deposits_DATE",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.file",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "withdrawal",
+							"activities": [
+								{
+									"name": "Copy Withdrawal",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_withdrawal_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Withdrawals",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Withdrawal",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Withdrawal').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "counterfeits",
+							"activities": [
+								{
+									"name": "Copy Counterfeits",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_counterfeits_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Counterfeits",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Counterfeits",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Counterfeits').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "inventory_snapshot",
+							"activities": [
+								{
+									"name": "Copy Inventory Snapshot",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_inventory_snapshot_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Inventory Snapshot",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Inventory Snapshot",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Inventory Snapshot').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "shortage",
+							"activities": [
+								{
+									"name": "Copy Shortage",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_shortage_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Shortage",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Shortage",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Shortage').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "overcap",
+							"activities": [
+								{
+									"name": "Copy Overcap",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_overcap_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Overcap",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Overcap",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Overcap').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "rdc_profile",
+							"activities": [
+								{
+									"name": "Copy RDC Profile",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_rdc_profile_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable -   RDC Profile",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy RDC Profile",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy RDC Profile').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "rdc_profile_details",
+							"activities": [
+								{
+									"name": "Copy RDC Profile Details",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_rdc_profile_details_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable -   RDC Profile Details",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy RDC Profile Details",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy RDC Profile Details').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "shipments",
+							"activities": [
+								{
+									"name": "Copy Shipments",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_shipments_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Shipments",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Shipments",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Shipments').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "non_conformances",
+							"activities": [
+								{
+									"name": "Copy Non-Conformances",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_non_conformances_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Non-Conformances",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Non-Conformances",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Non-Conformances').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "deposits",
+							"activities": [
+								{
+									"name": "Copy Deposits",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": false,
+												"wildcardFileName": {
+													"value": "@concat('nes_deposits_', replace(pipeline().parameters.date,'-','_'), '*')",
+													"type": "Expression"
+												},
+												"deleteFilesAfterCompletion": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_sftp_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_hostname": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_host_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_host_stg, pipeline().globalParameters.gpm_nes_config.sftp_host_prd))",
+													"type": "Expression"
+												},
+												"pm_username": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_user_dev, if(equals(pipeline().globalParameters.gpm_env,'stg'), pipeline().globalParameters.gpm_nes_config.sftp_user_stg, pipeline().globalParameters.gpm_nes_config.sftp_user_prd))",
+													"type": "Expression"
+												},
+												"pm_keyname": "@pipeline().globalParameters.gpm_nes_config.sftp_key",
+												"pm_folder": {
+													"value": "@if(equals(pipeline().globalParameters.gpm_env,'dev'), pipeline().globalParameters.gpm_nes_config.sftp_folder_dev, pipeline().globalParameters.gpm_nes_config.sftp_folder_stg_prd)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_land_binary",
+											"type": "DatasetReference",
+											"parameters": {
+												"pm_container": {
+													"value": "@pipeline().globalParameters.gpm_nes_config.land_container",
+													"type": "Expression"
+												},
+												"pm_folder": {
+													"value": "@concat(pipeline().globalParameters.gpm_nes_config.land_folder,toLower(pipeline().parameters.file),'/',pipeline().parameters.date)",
+													"type": "Expression"
+												},
+												"pm_filename": "@null"
+											}
+										}
+									]
+								},
+								{
+									"name": "Set variable - Deposits",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Copy Deposits",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "filesWritten",
+										"value": {
+											"value": "@activity('Copy Deposits').output.filesWritten",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "If file written",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Copy files from SFTP to Landing",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('filesWritten'), 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Fail - source file missing",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat(pipeline().parameters.file, ' on ', pipeline().parameters.date, ' is missing.')",
+									"type": "Expression"
+								},
+								"errorCode": "404"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"filesWritten": {
+				"type": "Integer",
+				"defaultValue": 0
+			}
+		},
+		"folder": {
+			"name": "NES/Dynamic"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,34 @@
+{
+	"name": "DS_pod",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_pod",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account": {
+					"value": "@dataset().storage_account",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"directory": {
+				"type": "string"
+			},
+			"storage_account": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": {
+					"value": "@dataset().directory",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

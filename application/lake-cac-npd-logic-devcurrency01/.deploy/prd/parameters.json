@@ -1,0 +1,54 @@
+{
+  "PARAM_ENV": {
+    "type": "String",
+    "value": "prd"
+  },
+  "PARAM_RCMP_BLOB_LAND_PATH": {
+    "type": "String",
+    "value": "land-currency/rcmp"
+  },
+  "PARAM_RCMP_EMAIL_ATTACHMENT_COUNT": {
+    "type": "Int",
+    "value": 2
+  },
+  "PARAM_RCMP_EMAIL_SUBJECT_KEYWORD": {
+    "type": "String",
+    "value": "Reports"
+  },
+  "PARAM_RCMP_RUN_ADF": {
+    "type": "Bool",
+    "value": true
+  },
+  "PARM_ALERT_PROJECT_CONFIG_FILE": {
+    "type": "String",
+    "value": "config.json"
+  },
+  "PARM_ALERT_SERVICE_ROOT_PATH": {
+    "type": "String",
+    "value": "config-currency/alert_service"
+  },
+  "PARAM_ENV_SUB_ID": {
+    "type": "String",
+    "value": "7c0bb47c-1b9b-4cb9-adbc-344efbe85bbc"
+  },
+  "PARAM_ENV_RG": {
+    "type": "String",
+    "value": "lake-cac-prd-rg-prdcurrency"
+  },
+  "PARM_ENV_ADF_NAME": {
+    "type": "String",
+    "value": "lake-cac-prd-adf-prdcurrency01"
+  },
+  "PARAM_ENV_PLATFORM_RG": {
+    "type": "String",
+    "value": "lake-cac-prd-rg-prdplatform"
+  },
+  "PARAM_ENV_LOG_NAME": {
+    "type": "String",
+    "value": "lake-cac-prd-log-prd01"
+  },
+  "PARM_ALERT_PROJECT_RUNID_FILE": {
+    "type": "String",
+    "value": "runid.txt"
+  }
+}

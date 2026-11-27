@@ -1,0 +1,81 @@
+trigger: none
+
+pool:
+  name:  dops-prdagntpl01
+
+variables:
+  # Function app name
+  functionAppName: 'lake-cac-npd-func-devcurrency02'
+  # Working directory
+  workingDirectory: '$(System.DefaultWorkingDirectory)/application/lake-cac-npd-func-devcurrency01'
+  # Node.js version
+  nodeVersion: '18.16.0'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: NodeTool@0
+      displayName: 'Install Node.js $(nodeVersion)'
+      inputs:
+        versionSpec: '$(nodeVersion)'
+
+    - script: |
+        cd $(workingDirectory)
+        npm install
+      displayName: 'npm install dependencies'
+
+    - script: |
+        cd $(workingDirectory)
+        npm run build --if-present
+      displayName: 'npm build'
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(workingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(functionAppName).zip
+        replaceExistingArchive: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy Function App'
+
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
+  
+    - script: |
+        echo "Listing downloaded artifacts"
+        dir "$(System.ArtifactsDirectory)/drop"
+      displayName: 'List downloaded artifacts'
+
+    - task: AzureFunctionApp@2
+      displayName: 'Azure Function App Deploy'
+      inputs:
+        azureSubscription: 'lake-dscn-bocqa01'  # Replace with your service connection name
+        appType: 'functionApp'
+        appName: '$(functionAppName)'
+        package: '$(System.ArtifactsDirectory)/drop/$(functionAppName).zip'
+        deploymentMethod: 'zipDeploy'
+        verbosity: 'Verbose'

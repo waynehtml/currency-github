@@ -1,0 +1,67 @@
+{
+	"name": "PL_Standardized_to_Curation_RCMP",
+	"properties": {
+		"activities": [
+			{
+				"name": "raw_to_standardized_rcmp",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "/currency/curated/rcmp_cft_standardized_to_curated",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"container": "restricted",
+						"storage": {
+							"value": "@pipeline().globalParameters.gpm_storage",
+							"type": "Expression"
+						},
+						"folder": {
+							"value": "@pipeline().parameters.folder",
+							"type": "Expression"
+						},
+						"environment": {
+							"value": "@pipeline().globalParameters.gpm_env",
+							"type": "Expression"
+						},
+						"land_storage": {
+							"value": "@pipeline().globalParameters.gpm_land2_storage",
+							"type": "Expression"
+						},
+						"load_type": {
+							"value": "@pipeline().parameters.load_type",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_databricks_UC",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"folder": {
+				"type": "string",
+				"defaultValue": "2024-JAN"
+			},
+			"load_type": {
+				"type": "string",
+				"defaultValue": "incremental_load"
+			}
+		},
+		"folder": {
+			"name": "RCMP/Dynamic"
+		},
+		"annotations": []
+	}
+}

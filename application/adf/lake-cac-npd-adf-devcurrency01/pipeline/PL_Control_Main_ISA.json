@@ -1,0 +1,276 @@
+{
+	"name": "PL_Control_Main_ISA",
+	"properties": {
+		"activities": [
+			{
+				"name": "If skip SFTP to AV",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Sftp_to_Av,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_SFTP_to_AV_ISA",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_SFTP_to_AV_ISA",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip AV  to Land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If skip SFTP to AV",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Av_to_Land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_AV_to_Land_ISA",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_AV_to_Land_ISA",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip Land to Raw",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip AV  to Land",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Land_to_Raw,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Land_to_Raw_ISA",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Raw_ISA",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip Archives",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip Raw to Standard",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Archive_Files,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Archive_Files",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Archive_Files",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+										"type": "Expression"
+									},
+									"hostname": {
+										"value": "@pipeline().globalParameters.gpm_sftp_host_isa",
+										"type": "Expression"
+									},
+									"username": {
+										"value": "@pipeline().globalParameters.gpm_sftp_user_isa",
+										"type": "Expression"
+									},
+									"key": {
+										"value": "ISA-pass",
+										"type": "Expression"
+									},
+									"folder": {
+										"value": "/ISA/",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Skip Raw to Standard",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Skip Land to Raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_Raw_to_Standard,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Raw_to_Standardized_ISA",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Raw_to_Standardized_ISA",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+										"type": "Expression"
+									},
+									"file": {
+										"value": "@pipeline().parameters.file",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file": {
+				"type": "string"
+			},
+			"delta": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"skip_Sftp_to_Av": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Av_to_Land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Land_to_Raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Raw_to_Standard": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_Archive_Files": {
+				"type": "int",
+				"defaultValue": 1
+			}
+		},
+		"folder": {
+			"name": "ISA/Control"
+		},
+		"annotations": []
+	}
+}

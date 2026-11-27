@@ -1,0 +1,179 @@
+{
+	"name": "PL_Control_Main_Cision_Media",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set run date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_date",
+					"value": {
+						"value": "@if(equals(pipeline().parameters.date, null), formatDateTime(utcnow(),'yyyy-MM-dd'), pipeline().parameters.date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If skip_rdrive_to_land",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set run date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_rdrive_to_land,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_RDrive_to_Land_Media",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_RDrive_to_Land_Media",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"date": {
+										"value": "@variables('run_date')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If skip_land_to_raw",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If skip_rdrive_to_land",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_land_to_raw,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Land_to_Raw_Media",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Land_to_Raw_Media",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"run_date": {
+										"value": "@variables('run_date')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If skip_raw_to_standardized",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If skip_land_to_raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.skip_raw_to_standardized,1)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "PL_Raw_to_Standardized_Media",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Raw_to_Standardized_Media",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"run_date": {
+										"value": "@variables('run_date')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"date": {
+				"type": "string"
+			},
+			"skip_rdrive_to_land": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_land_to_raw": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"skip_raw_to_standardized": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"variables": {
+			"run_date": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cision/Control"
+		},
+		"annotations": []
+	}
+}

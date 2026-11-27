@@ -1,0 +1,40 @@
+{
+	"name": "trg_PL_Control_Main_Cision_Media",
+	"properties": {
+		"description": "Executes the pipeline to process the Cision Media file, once per weekday at noon.",
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Control_Main_Cision_Media",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2024-10-30T05:21:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						5
+					],
+					"weekDays": [
+						"Tuesday",
+						"Monday",
+						"Wednesday",
+						"Thursday",
+						"Friday"
+					]
+				}
+			}
+		}
+	}
+}

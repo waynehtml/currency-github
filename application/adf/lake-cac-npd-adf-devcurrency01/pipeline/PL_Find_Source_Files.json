@@ -1,0 +1,280 @@
+{
+	"name": "PL_Find_Source_Files",
+	"properties": {
+		"description": "{\"type\":\"FS\",\"path\":\"\\\\\\\\10.210.129.109\\\\sni_dc1_prd_data_vol01\\\\SNSFILES\\\\CBN\\\\2025\\\\ssn\"} \n{\"type\":\"SPO\",\"drive_id\":\"b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8\",\"path\":\"Reports-Ottawa/Datalake_Files\"}",
+		"activities": [
+			{
+				"name": "Connection Type",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.param_src_connection['type']",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "FS",
+							"activities": [
+								{
+									"name": "Get files",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "DS_FS_rdrive_binary_file",
+											"type": "DatasetReference",
+											"parameters": {
+												"host_name": "svm1",
+												"file_path": {
+													"value": "@replace(pipeline().parameters.param_src_connection['path'],'/','\\')",
+													"type": "Expression"
+												},
+												"ad_user_name": "bocad\\crdp_dscurr_oppl_s",
+												"kv_pass_key": "crdp-dscurr-oppl-s-pass",
+												"filename": "@null"
+											}
+										},
+										"fieldList": [
+											"childItems"
+										],
+										"storeSettings": {
+											"type": "FileServerReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "BinaryReadSettings"
+										}
+									}
+								},
+								{
+									"name": "Extract Filenames - FS",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Get files",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_Call_AZF_Func",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"function": "extractValues",
+											"parameters": {
+												"value": "@concat(\n    '{',\n    '\"array\":',string(activity('Get files').output.childItems), ',',\n     '\"key\":\"name\"',\n    '}')",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Set Extract Filenames - FS",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Extract Filenames - FS",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "var_filenames",
+										"value": {
+											"value": "@activity('Extract Filenames - FS').output.pipelineReturnValue.value",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "SPO",
+							"activities": [
+								{
+									"name": "List All Files",
+									"type": "WebActivity",
+									"dependsOn": [
+										{
+											"activity": "Get Token",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"method": "GET",
+										"headers": {
+											"Content-Type": "application/x-www-form-urlencoded",
+											"User-Agent": "MySharePointApp/1.0",
+											"Authorization": {
+												"value": "@concat('Bearer ', activity('Get Token').output.pipelineReturnValue.token)",
+												"type": "Expression"
+											}
+										},
+										"url": {
+											"value": "@concat('https://graph.microsoft.com/v1.0/drives/', \n        pipeline().parameters.param_src_connection['drive_id'], \n        concat('/root:/',pipeline().parameters.param_src_connection['path'],':/children?'),\n        '$top=999',\n        '&$select=name,id,createdDateTime',\n        '&$orderby=name desc'\n        )",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Get Token",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_SPO_Get_Bearer_Token",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true
+									}
+								},
+								{
+									"name": "Extract Filenames - SPO",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "List All Files",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_Call_AZF_Func",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"function": "extractValues",
+											"parameters": {
+												"value": "@concat(\n    '{',\n    '\"array\":',string(activity('List All Files').output.value), ',',\n     '\"key\":\"name\"',\n    '}')",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Set Extract Filenames - SPO",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Extract Filenames - SPO",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "var_filenames",
+										"value": {
+											"value": "@activity('Extract Filenames - SPO').output.pipelineReturnValue.value",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Set Return Value - SPO files",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Connection Type",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "files",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('var_filenames')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"param_src_connection": {
+				"type": "object",
+				"defaultValue": {
+					"type": "SPO",
+					"drive_id": "b!B0POKey_t0KIrs6pdmcVtEunRbzOyRdAvuXVDC1n8iYXpVN3QykORbdvLSZmE9c8",
+					"path": "Reports-Ottawa/Datalake_Files"
+				}
+			}
+		},
+		"variables": {
+			"var_filenames": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/Common"
+		},
+		"annotations": []
+	}
+}

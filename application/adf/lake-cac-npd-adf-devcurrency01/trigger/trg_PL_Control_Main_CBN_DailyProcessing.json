@@ -1,0 +1,42 @@
+{
+	"name": "trg_PL_Control_Main_CBN_DailyProcessing",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_CBN_Control_Main",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"file_type": "dailyprocessing"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2025-07-04T11:55:00",
+				"timeZone": "Eastern Standard Time",
+				"schedule": {
+					"minutes": [
+						20
+					],
+					"hours": [
+						8
+					],
+					"weekDays": [
+						"Monday",
+						"Tuesday",
+						"Wednesday",
+						"Thursday",
+						"Friday"
+					]
+				}
+			}
+		}
+	}
+}

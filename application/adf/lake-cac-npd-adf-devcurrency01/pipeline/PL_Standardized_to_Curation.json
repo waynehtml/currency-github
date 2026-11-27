@@ -1,0 +1,634 @@
+{
+	"name": "PL_Standardized_to_Curation",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "date",
+					"value": {
+						"value": "@subtractFromTime(utcnow('yyyy-MM-dd'), pipeline().parameters.delta, 'Day','yyyy-MM-dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Switch_UC_DEngg",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Set Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.file_type",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "aoc_inventory_backlog",
+							"activities": [
+								{
+									"name": "load_curation_Inv_Snaps",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": {
+											"value": "/currency/curated/aoc_inventory_backlog",
+											"type": "Expression"
+										},
+										"baseParameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"storage": {
+												"value": "@pipeline().globalParameters.gpm_storage",
+												"type": "Expression"
+											},
+											"kv_scope": {
+												"value": "@pipeline().parameters.kv_scope",
+												"type": "Expression"
+											},
+											"spn_id_secret": {
+												"value": "@pipeline().parameters.spn_id_secret",
+												"type": "Expression"
+											},
+											"spn_key_secret": {
+												"value": "@pipeline().parameters.spn_key_secret",
+												"type": "Expression"
+											},
+											"tenant_id_secret": {
+												"value": "@pipeline().parameters.tenant_id_secret",
+												"type": "Expression"
+											},
+											"date": {
+												"value": "@variables('date')",
+												"type": "Expression"
+											},
+											"load_type": {
+												"value": "@pipeline().parameters.load_type",
+												"type": "Expression"
+											},
+											"mode": {
+												"value": "@pipeline().parameters.mode",
+												"type": "Expression"
+											},
+											"land_storage": {
+												"value": "@pipeline().globalParameters.gpm_land_storage",
+												"type": "Expression"
+											},
+											"environment": {
+												"value": "@pipeline().globalParameters.gpm_env",
+												"type": "Expression"
+											},
+											"land_container": "config-currency"
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_databricks_UC",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Set return_value_UC",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "load_curation_Inv_Snaps",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "notebook_return",
+										"value": {
+											"value": "@activity('load_curation_Inv_Snaps').output.runOutput\n ",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "aoc_m7_isa_sn1on4on",
+							"activities": [
+								{
+									"name": "aoc_m7_isa_sn1on4on_tracking",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": {
+											"value": "/currency/curated/aoc_m7_isa_sn1on4on_tracking",
+											"type": "Expression"
+										},
+										"baseParameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"storage": {
+												"value": "@pipeline().globalParameters.gpm_storage",
+												"type": "Expression"
+											},
+											"kv_scope": {
+												"value": "@pipeline().parameters.kv_scope",
+												"type": "Expression"
+											},
+											"spn_id_secret": {
+												"value": "@pipeline().parameters.spn_id_secret",
+												"type": "Expression"
+											},
+											"spn_key_secret": {
+												"value": "@pipeline().parameters.spn_key_secret",
+												"type": "Expression"
+											},
+											"tenant_id_secret": {
+												"value": "@pipeline().parameters.tenant_id_secret",
+												"type": "Expression"
+											},
+											"date": {
+												"value": "@variables('date')",
+												"type": "Expression"
+											},
+											"load_type": {
+												"value": "@pipeline().parameters.load_type",
+												"type": "Expression"
+											},
+											"mode": {
+												"value": "@pipeline().parameters.mode",
+												"type": "Expression"
+											},
+											"land_storage": {
+												"value": "@pipeline().globalParameters.gpm_land_storage",
+												"type": "Expression"
+											},
+											"environment": {
+												"value": "@pipeline().globalParameters.gpm_env",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_databricks_UC",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Set return_value_aoc_m7_isa_sn01",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "aoc_m7_isa_sn1on4on_tracking",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "notebook_return",
+										"value": {
+											"value": "@activity('aoc_m7_isa_sn1on4on_tracking').output.runOutput\n ",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "aoc_ems_curation",
+							"activities": [
+								{
+									"name": "load_curation_ems",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": {
+											"value": "/currency/curated/ems_containers_standardized_to_curated",
+											"type": "Expression"
+										},
+										"baseParameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"storage": {
+												"value": "@pipeline().globalParameters.gpm_storage",
+												"type": "Expression"
+											},
+											"kv_scope": {
+												"value": "@pipeline().parameters.kv_scope",
+												"type": "Expression"
+											},
+											"spn_id_secret": {
+												"value": "@pipeline().parameters.spn_id_secret",
+												"type": "Expression"
+											},
+											"spn_key_secret": {
+												"value": "@pipeline().parameters.spn_key_secret",
+												"type": "Expression"
+											},
+											"tenant_id_secret": {
+												"value": "@pipeline().parameters.tenant_id_secret",
+												"type": "Expression"
+											},
+											"date": {
+												"value": "@variables('date')",
+												"type": "Expression"
+											},
+											"load_type": {
+												"value": "@pipeline().parameters.load_type",
+												"type": "Expression"
+											},
+											"mode": {
+												"value": "@pipeline().parameters.mode",
+												"type": "Expression"
+											},
+											"land_storage": {
+												"value": "@pipeline().globalParameters.gpm_land_storage",
+												"type": "Expression"
+											},
+											"environment": {
+												"value": "@pipeline().globalParameters.gpm_env",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_databricks_UC",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Set return_value_UC_ems",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "load_curation_ems",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "notebook_return",
+										"value": {
+											"value": "@activity('load_curation_ems').output.runOutput\n ",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "aoc_bnlist_curated",
+							"activities": [
+								{
+									"name": "bnlist_curated",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": "/currency/curated/bnlist_standardized_to_curated",
+										"baseParameters": {
+											"load_type": {
+												"value": "@pipeline().parameters.load_type",
+												"type": "Expression"
+											},
+											"date": {
+												"value": "@variables('date')",
+												"type": "Expression"
+											},
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"storage": {
+												"value": "@pipeline().globalParameters.gpm_storage",
+												"type": "Expression"
+											},
+											"environment": {
+												"value": "@pipeline().globalParameters.gpm_env",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_databricks_UC",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Set return_value_aoc_bnlist_curated",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "bnlist_curated",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "notebook_return",
+										"value": {
+											"value": "@activity('bnlist_curated').output.runOutput",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "load_curation_Notes",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@concat('/currency/curated/',pipeline().parameters.file_type)",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"storage": {
+										"value": "@pipeline().globalParameters.gpm_storage",
+										"type": "Expression"
+									},
+									"kv_scope": {
+										"value": "@pipeline().parameters.kv_scope",
+										"type": "Expression"
+									},
+									"spn_id_secret": {
+										"value": "@pipeline().parameters.spn_id_secret",
+										"type": "Expression"
+									},
+									"spn_key_secret": {
+										"value": "@pipeline().parameters.spn_key_secret",
+										"type": "Expression"
+									},
+									"tenant_id_secret": {
+										"value": "@pipeline().parameters.tenant_id_secret",
+										"type": "Expression"
+									},
+									"date": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"load_type": {
+										"value": "@pipeline().parameters.load_type",
+										"type": "Expression"
+									},
+									"mode": {
+										"value": "@pipeline().parameters.mode",
+										"type": "Expression"
+									},
+									"land_storage": {
+										"value": "@pipeline().globalParameters.gpm_land_storage",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_databricks_UC",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Set return_value_DE",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "load_curation_Notes",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "notebook_return",
+								"value": {
+									"value": "@activity('load_curation_Notes').output.runOutput\n ",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "If Warning Validations Failed",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Switch_UC_DEngg",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('notebook_return'),'no_date')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Execute PL_Warning_Email",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Warning_Email",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						},
+						{
+							"name": "Execute PL_Log_Notification",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Execute PL_Warning_Email",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_Log_Notification",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"pipeline": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"key1": {
+										"value": "@pipeline().parameters.file_type",
+										"type": "Expression"
+									},
+									"key2": {
+										"value": "@variables('date')",
+										"type": "Expression"
+									},
+									"runid": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"delta": {
+				"type": "int",
+				"defaultValue": 1
+			},
+			"file_type": {
+				"type": "string",
+				"defaultValue": "aoc_m7_counters"
+			},
+			"container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			},
+			"land_container": {
+				"type": "string",
+				"defaultValue": "land-currency"
+			},
+			"tenant_id_secret": {
+				"type": "string",
+				"defaultValue": "lake-tenant-id"
+			},
+			"spn_key_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-key"
+			},
+			"spn_id_secret": {
+				"type": "string",
+				"defaultValue": "spn-currencyservices-id"
+			},
+			"kv_scope": {
+				"type": "string",
+				"defaultValue": "lake-kv-currency-scope"
+			},
+			"load_type": {
+				"type": "string",
+				"defaultValue": "incremental_load"
+			},
+			"mode": {
+				"type": "string",
+				"defaultValue": "append"
+			}
+		},
+		"variables": {
+			"notebook_return": {
+				"type": "String"
+			},
+			"date": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Curation"
+		},
+		"annotations": []
+	}
+}

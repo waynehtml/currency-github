@@ -1,0 +1,330 @@
+{
+	"name": "PL_Find_New_Files",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get sub folders",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_raw_binary_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"pm_container": {
+								"value": "@pipeline().parameters.param_raw_container",
+								"type": "Expression"
+							},
+							"pm_folder": {
+								"value": "@pipeline().parameters.param_raw_root",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Sub folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter sub folders').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Merge return Dates into tmp_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_raw_file_metadatas_tmp",
+								"value": {
+									"value": "@union(activity('Get files').output.childItems, variables('var_raw_file_metadatas'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy tmp to var_dates",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Merge return Dates into tmp_dates",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_raw_file_metadatas",
+								"value": {
+									"value": "@variables('var_raw_file_metadatas_tmp')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get files",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_raw_binary_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"pm_container": {
+											"value": "@pipeline().parameters.param_raw_container",
+											"type": "Expression"
+										},
+										"pm_folder": {
+											"value": "@concat(pipeline().parameters.param_raw_root,'/',item().name)",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter sub folders",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get sub folders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get sub folders').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().type, 'Folder')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Source File",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ForEach - File Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.param_src_files",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "If New File",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(contains(variables('var_raw_files'), item()))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Append New File",
+										"type": "AppendVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "var_new_files",
+											"value": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set Return Value - files",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Source File",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "value",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('var_new_files')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "ForEach - File Metadata",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Sub folder",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('var_raw_file_metadatas')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Append - Raw file",
+							"type": "AppendVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "var_raw_files",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"param_src_files": {
+				"type": "array",
+				"defaultValue": [
+					"QA_Lab_Data_Batch_N250001_20250528.csv",
+					"QA_Lab_Data_Batch_N250002_20250528.csv",
+					"QA_Lab_Data_Batch_N290002_20250528.csv"
+				]
+			},
+			"param_raw_root": {
+				"type": "string",
+				"defaultValue": "raw/internal/qm/lab"
+			},
+			"param_raw_container": {
+				"type": "string",
+				"defaultValue": "restricted"
+			}
+		},
+		"variables": {
+			"var_raw_file_metadatas": {
+				"type": "Array"
+			},
+			"var_raw_file_metadatas_tmp": {
+				"type": "Array"
+			},
+			"var_raw_files": {
+				"type": "Array"
+			},
+			"var_new_files": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "Common/Framework/archive"
+		},
+		"annotations": []
+	}
+}
